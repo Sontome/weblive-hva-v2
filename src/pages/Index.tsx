@@ -350,67 +350,64 @@ const Index = () => {
       />
       {/* Header */}
       <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-end items-start">
-            
-            <div className="flex gap-3">
-              <Button
-                onClick={() => setShowVJTicketModal(true)}
-                variant="action-ticket"
-                size="default"
-                className="px-5"
-              >
-                🎫 Mặt vé chờ VJ
-              </Button>
-              <Button
-                onClick={() => setShowVNATicketModal(true)}
-                variant="action-ticket"
-                size="default"
-                className="px-5"
-              >
-                🎫 Mặt vé chờ VNA
-              </Button>
-              <Button
-                onClick={() => setShowRepriceModal(true)}
-                variant="action-reprice"
-                size="default"
-                className="px-5"
-              >
-                💰 Reprice
-              </Button>
-              <Button
-                onClick={() => setShowCheckinModal(true)}
-                variant="action-checkin"
-                size="default"
-                className="px-5"
-              >
-                ✅ Check-in
-              </Button>
-              <Button
-                onClick={() => setShowPNRModal(true)}
-                variant="action-image"
-                size="default"
-                className="px-5"
-              >
-                🎫 Lấy ảnh mặt vé
-              </Button>
-              <Button
-                onClick={() => setShowEmailModal(true)}
-                variant="action-email"
-                size="default"
-                className="px-5"
-              >
-                📧 Gửi Email Mặt Vé
-              </Button>
-              <Button
-                onClick={handleLogout}
-                variant="action-logout"
-                size="default"
-                className="px-5"
-              >
-                🚪 THOÁT
-              </Button>
-            </div>
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-3 sm:py-6">
+          <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-3">
+            <Button
+              onClick={() => setShowVJTicketModal(true)}
+              variant="action-ticket"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              🎫 Vé VJ
+            </Button>
+            <Button
+              onClick={() => setShowVNATicketModal(true)}
+              variant="action-ticket"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              🎫 Vé VNA
+            </Button>
+            <Button
+              onClick={() => setShowRepriceModal(true)}
+              variant="action-reprice"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              💰 Reprice
+            </Button>
+            <Button
+              onClick={() => setShowCheckinModal(true)}
+              variant="action-checkin"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              ✅ Check-in
+            </Button>
+            <Button
+              onClick={() => setShowPNRModal(true)}
+              variant="action-image"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              🎫 Ảnh vé
+            </Button>
+            <Button
+              onClick={() => setShowEmailModal(true)}
+              variant="action-email"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              📧 Email
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="action-logout"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              🚪 Thoát
+            </Button>
           </div>
         </div>
       </div>

@@ -517,42 +517,42 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
   const minReturnDate = formData.departureDate > today ? formData.departureDate : today;
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+    <div className="bg-white rounded-2xl shadow-xl p-3 sm:p-6 mb-6">
       {/* Header and Customer Type Section */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Tìm chuyến bay</h2>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-800">Tìm chuyến bay</h2>
 
-        <div className="flex items-center space-x-4">
-          <h3 className="text-base font-semibold text-gray-800 ml-4">Phí xuất vé:</h3>
+        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-4">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-800">Phí xuất vé:</h3>
 
           {/* Customer Type Buttons */}
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-1 sm:gap-2">
             <button
               type="button"
               onClick={() => handleCustomerTypeChange("page")}
-              className={`px-4 py-2 rounded-lg font-bold text-sm ${
+              className={`px-2 sm:px-4 py-1 sm:py-2 rounded-lg font-bold text-xs sm:text-sm ${
                 customerType === "page" && !isCustomMode
                   ? "bg-blue-500 text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
-              Khách PAGE
+              PAGE
             </button>
             <button
               type="button"
               onClick={() => handleCustomerTypeChange("live")}
-              className={`px-4 py-2 rounded-lg font-bold text-sm ${
+              className={`px-2 sm:px-4 py-1 sm:py-2 rounded-lg font-bold text-xs sm:text-sm ${
                 customerType === "live" && !isCustomMode
                   ? "bg-red-500 text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
-              Khách LIVE
+              LIVE
             </button>
             <button
               type="button"
               onClick={handleCustomModeToggle}
-              className={`px-4 py-2 rounded-lg font-bold text-sm ${
+              className={`px-2 sm:px-4 py-1 sm:py-2 rounded-lg font-bold text-xs sm:text-sm ${
                 isCustomMode ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
@@ -561,9 +561,9 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
           </div>
 
           {/* Fee Inputs */}
-          <div className="flex space-x-4">
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Phí một chiều (₩)</label>
+          <div className="flex flex-wrap gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">1 chiều</label>
               <div className="flex items-center">
                 <input
                   type="number"
@@ -572,7 +572,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                     isCustomMode &&
                     setFormData((prev) => ({ ...prev, oneWayFee: Math.max(0, parseInt(e.target.value) || 0) }))
                   }
-                  className={`w-20 px-2 py-1 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-bold ${
+                  className={`w-16 sm:w-20 px-1 sm:px-2 py-1 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm font-bold ${
                     !isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""
                   } ${getFeeTextColor()}`}
                   min="0"
@@ -602,8 +602,8 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Khứ hồi VIETJET (₩)</label>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">KH VJ</label>
               <div className="flex items-center">
                 <input
                   type="number"
@@ -615,7 +615,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                       roundTripFeeVietjet: Math.max(0, parseInt(e.target.value) || 0),
                     }))
                   }
-                  className={`w-20 px-2 py-1 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-bold ${
+                  className={`w-16 sm:w-20 px-1 sm:px-2 py-1 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm font-bold ${
                     !isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""
                   } ${getFeeTextColor()}`}
                   min="0"
@@ -645,8 +645,8 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Khứ hồi VNA (₩)</label>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">KH VNA</label>
               <div className="flex items-center">
                 <input
                   type="number"
@@ -655,7 +655,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                     isCustomMode &&
                     setFormData((prev) => ({ ...prev, roundTripFeeVNA: Math.max(0, parseInt(e.target.value) || 0) }))
                   }
-                  className={`w-20 px-2 py-1 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-bold ${
+                  className={`w-16 sm:w-20 px-1 sm:px-2 py-1 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm font-bold ${
                     !isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""
                   } ${getFeeTextColor()}`}
                   min="0"
@@ -1060,39 +1060,41 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Main form layout - 3 columns */}
-        <div className="grid grid-cols-12 gap-4 items-start">
-          {/* Column 1: Trip Type and Reset Button - Always visible */}
-          <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Loại vé</label>
-            <div className="space-y-2 mb-3">
-              <label className="flex items-center text-sm">
-                <input
-                  type="radio"
-                  value="OW"
-                  checked={formData.tripType === "OW"}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, tripType: e.target.value as "OW" | "RT" }))}
-                  className="mr-2"
-                />
-                Một chiều
-              </label>
-              <label className="flex items-center text-sm">
-                <input
-                  type="radio"
-                  value="RT"
-                  checked={formData.tripType === "RT"}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, tripType: e.target.value as "OW" | "RT" }))}
-                  className="mr-2"
-                />
-                Khứ hồi
-              </label>
+        {/* Main form layout - responsive grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-start">
+          {/* Column 1: Trip Type and Reset Button */}
+          <div className="md:col-span-2 flex md:flex-col gap-3 md:gap-0">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Loại vé</label>
+              <div className="flex md:flex-col gap-3 md:gap-0 md:space-y-2 mb-3">
+                <label className="flex items-center text-sm">
+                  <input
+                    type="radio"
+                    value="OW"
+                    checked={formData.tripType === "OW"}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, tripType: e.target.value as "OW" | "RT" }))}
+                    className="mr-2"
+                  />
+                  Một chiều
+                </label>
+                <label className="flex items-center text-sm">
+                  <input
+                    type="radio"
+                    value="RT"
+                    checked={formData.tripType === "RT"}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, tripType: e.target.value as "OW" | "RT" }))}
+                    className="mr-2"
+                  />
+                  Khứ hồi
+                </label>
+              </div>
             </div>
 
-            {/* Reset Button - Always visible with reduced width */}
+            {/* Reset Button */}
             <button
               type="button"
               onClick={handleReset}
-              className="w-1/2 bg-orange-500 text-white py-2 px-2 rounded-lg font-semibold hover:bg-orange-600 transition-colors text-xs flex items-center justify-center gap-1"
+              className="md:w-1/2 bg-orange-500 text-white py-2 px-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors text-xs flex items-center justify-center gap-1 whitespace-nowrap"
             >
               <RotateCcw className="w-3 h-3" />
               NHẬP LẠI
@@ -1100,9 +1102,9 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
           </div>
 
           {/* Column 2: Airports and Dates */}
-          <div className="col-span-7 space-y-3">
+          <div className="md:col-span-7 space-y-3">
             {/* Airports Row */}
-            <div className="grid grid-cols-2 gap-4 relative">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 relative">
               <AirportSelect
                 value={formData.departure}
                 onChange={(value) => setFormData((prev) => ({ ...prev, departure: value }))}
@@ -1127,7 +1129,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
             </div>
 
             {/* Dates Row */}
-            <div className="grid grid-cols-2 gap-4 relative">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 relative">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <label className="block text-sm font-medium text-gray-700">Ngày đi</label>
@@ -1145,11 +1147,11 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal px-3 py-2 h-auto",
+                        "w-full justify-start text-left font-normal px-2 sm:px-3 py-2 h-auto text-xs sm:text-sm",
                         !departureDate && "text-muted-foreground",
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-1 sm:mr-2 h-4 w-4" />
                       {departureDate ? format(departureDate, "dd/MM/yyyy", { locale: vi }) : <span>Chọn ngày đi</span>}
                     </Button>
                   </PopoverTrigger>
@@ -1178,11 +1180,11 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal px-3 py-2 h-auto",
+                          "w-full justify-start text-left font-normal px-2 sm:px-3 py-2 h-auto text-xs sm:text-sm",
                           !returnDate && "text-muted-foreground",
                         )}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <CalendarIcon className="mr-1 sm:mr-2 h-4 w-4" />
                         {returnDate ? format(returnDate, "dd/MM/yyyy", { locale: vi }) : <span>Chọn ngày về</span>}
                       </Button>
                     </PopoverTrigger>
@@ -1209,25 +1211,23 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
           </div>
 
           {/* Column 3: Passenger counts and Search button */}
-          <div className="col-span-3 space-y-2">
-            {/* Adults - full width */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Người lớn</label>
-              <select
-                value={formData.adults}
-                onChange={(e) => setFormData((prev) => ({ ...prev, adults: parseInt(e.target.value) }))}
-                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-              >
-                {[1, 2, 3, 4, 5, 6].map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Children and Infants - side by side */}
-            <div className="grid grid-cols-2 gap-2">
+          <div className="md:col-span-3 space-y-2">
+            {/* Adults and Children/Infants - responsive */}
+            <div className="grid grid-cols-3 md:grid-cols-1 gap-2">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Người lớn</label>
+                <select
+                  value={formData.adults}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, adults: parseInt(e.target.value) }))}
+                  className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                >
+                  {[1, 2, 3, 4, 5, 6].map((num) => (
+                    <option key={num} value={num}>
+                      {num}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Trẻ em</label>
                 <select
@@ -1258,7 +1258,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
               </div>
             </div>
 
-            {/* Search Button - positioned where infants used to be */}
+            {/* Search Button */}
             <div className="pt-2">
               <button
                 type="submit"
