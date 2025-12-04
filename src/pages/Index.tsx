@@ -385,14 +385,6 @@ const Index = () => {
               ✅ Check-in
             </Button>
             <Button
-              onClick={() => setShowPNRModal(true)}
-              variant="action-image"
-              size="sm"
-              className="px-2 sm:px-5 text-xs sm:text-sm"
-            >
-              🎫 Ảnh vé
-            </Button>
-            <Button
               onClick={() => setShowEmailModal(true)}
               variant="action-email"
               size="sm"
@@ -401,12 +393,12 @@ const Index = () => {
               📧 Email
             </Button>
             <Button
-              onClick={handleLogout}
-              variant="action-logout"
+              onClick={() => setShowPNRModal(true)}
+              variant="action-image"
               size="sm"
               className="px-2 sm:px-5 text-xs sm:text-sm"
             >
-              🚪 Thoát
+              🎫 Ảnh vé
             </Button>
           </div>
         </div>
