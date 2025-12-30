@@ -17,7 +17,12 @@ interface EmailTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
+const TYPE_LABEL = {
+  3: "Cơ bản",
+  1: "IT FARE",
+  2: "FULL",
+  0: "Ghi chú",
+}
 export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => {
   const [formData, setFormData] = useState({
     email: "",
@@ -300,19 +305,28 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button type="button" variant="outline" className="min-w-[120px]">
-                      {formData.type === 0 ? "Cơ bản" : formData.type === 1 ? "IT FARE" : "FULL"}
+                      {TYPE_LABEL[formData.type] || "Ghi chú"}
                     </Button>
                   </DropdownMenuTrigger>
+                
                   <DropdownMenuContent align="end" className="bg-background z-50">
-                    <DropdownMenuItem onClick={() => setFormData((prev) => ({ ...prev, type: 0 }))}>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, type: 0 }))}>
+                      Ghi chú
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, type: 3 }))}>
                       Cơ bản
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setFormData((prev) => ({ ...prev, type: 1 }))}>
+                    
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, type: 1 }))}>
                       IT FARE
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setFormData((prev) => ({ ...prev, type: 2 }))}>
+                
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, type: 2 }))}>
                       FULL
                     </DropdownMenuItem>
+                
+                    
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
