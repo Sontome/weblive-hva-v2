@@ -508,16 +508,19 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
     }
   };
 
-  const adjustFee = (type: "oneWay" | "roundTripVietjet" | "roundTripVNA", direction: "up" | "down") => {
+  const adjustFee = (type: "oneWay" | "roundTripVietjet" | "roundTripVNA" | "roundTripOther", direction: "up" | "down") => {
     if (!isCustomMode) return; // Only allow adjustment in custom mode
 
     setFormData((prev) => {
-      const key =
-        type === "oneWay" ? "oneWayFee" : type === "roundTripVietjet" ? "roundTripFeeVietjet" : "roundTripFeeVNA";
-      // @ts-ignore
-      const currentValue = prev[key];
+      const keyMap: Record<string, keyof typeof prev> = {
+        oneWay: "oneWayFee",
+        roundTripVietjet: "roundTripFeeVietjet",
+        roundTripVNA: "roundTripFeeVNA",
+        roundTripOther: "roundTripFeeOther",
+      };
+      const key = keyMap[type];
+      const currentValue = prev[key] as number;
       const newValue = direction === "up" ? currentValue + 5000 : Math.max(0, currentValue - 5000);
-      // @ts-ignore
       return { ...prev, [key]: newValue };
     });
   };
@@ -765,6 +768,46 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                   <button
                     type="button"
                     onClick={() => adjustFee("roundTripVNA", "down")}
+                    disabled={!isCustomMode}
+                    className={`px-1 py-0.5 border border-gray-300 rounded-br-lg ${
+                      isCustomMode ? "bg-gray-200 hover:bg-gray-300" : "bg-gray-100 cursor-not-allowed"
+                    }`}
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">KH Other</label>
+              <div className="flex items-center">
+                <input
+                  type="number"
+                  value={formData.roundTripFeeOther}
+                  onChange={(e) =>
+                    isCustomMode &&
+                    setFormData((prev) => ({ ...prev, roundTripFeeOther: Math.max(0, parseInt(e.target.value) || 0) }))
+                  }
+                  className={`w-16 sm:w-20 px-1 sm:px-2 py-1 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm font-bold ${
+                    !isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""
+                  } ${getFeeTextColor()}`}
+                  min="0"
+                  disabled={!isCustomMode}
+                />
+                <div className="flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => adjustFee("roundTripOther", "up")}
+                    disabled={!isCustomMode}
+                    className={`px-1 py-0.5 border border-gray-300 rounded-tr-lg ${
+                      isCustomMode ? "bg-gray-200 hover:bg-gray-300" : "bg-gray-100 cursor-not-allowed"
+                    }`}
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => adjustFee("roundTripOther", "down")}
                     disabled={!isCustomMode}
                     className={`px-1 py-0.5 border border-gray-300 rounded-br-lg ${
                       isCustomMode ? "bg-gray-200 hover:bg-gray-300" : "bg-gray-100 cursor-not-allowed"
