@@ -467,13 +467,13 @@ export const OtherAirlinesModal: React.FC<OtherAirlinesModalProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
             {/* Left Column: Asian, Tway, Jin Air, Air Busan */}
             <div className="border-r lg:border-r lg:pr-4">
-              <h3 className="text-sm font-bold text-gray-700 mb-3 bg-gray-100 p-2 rounded">Cột 1</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-3 bg-gray-100 p-2 rounded">Asian, Tway, Jin Air, Air Busan</h3>
               {LEFT_COLUMN_AIRLINES.map(airline => renderAirlineSection(airline))}
             </div>
 
             {/* Right Column: Korean Air, Jeju, Premia, Air Seoul */}
             <div className="lg:pl-4">
-              <h3 className="text-sm font-bold text-gray-700 mb-3 bg-gray-100 p-2 rounded">Cột 2</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-3 bg-gray-100 p-2 rounded">Korean Air, Jeju, Premia, Air Seoul</h3>
               {RIGHT_COLUMN_AIRLINES.map(airline => renderAirlineSection(airline))}
             </div>
           </div>
