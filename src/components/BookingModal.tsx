@@ -52,6 +52,7 @@ export const BookingModal = ({
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [phoneKakao, setPhoneKakao] = useState('');
 
   // Popup dữ liệu khi giữ vé thành công
   const [successData, setSuccessData] = useState<{ code: string, deadline: string } | null>(null);
@@ -221,12 +222,19 @@ export const BookingModal = ({
         if (infant) ds_khach.em_bé.push(infant);
       });
 
+      // Auto prepend 0 if missing
+      let phone = phoneKakao.trim();
+      if (phone.length > 0 && !phone.startsWith('0')) {
+        phone = '0' + phone;
+      }
+
       const requestData = {
         ds_khach,
         bookingkey: bookingKey,
         bookingkeychieuve: tripType === 'RT' ? (bookingKeyReturn || '') : '',
         sochieu: tripType,
-        sanbaydi: departureAirport
+        sanbaydi: departureAirport,
+        ...(phone ? { phonekakao: phone } : {})
       };
 
       setIsLoading(true);
@@ -279,6 +287,14 @@ export const BookingModal = ({
 
           {/* danh sách hành khách */}
           <div className="space-y-6">
+            <div>
+              <Label>Phone/Kakao (không bắt buộc)</Label>
+              <Input
+                value={phoneKakao}
+                onChange={(e) => setPhoneKakao(e.target.value)}
+                placeholder="VD: 0901234567"
+              />
+            </div>
             {passengers.map((passenger, index) => (
               <div key={index} className="border rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
