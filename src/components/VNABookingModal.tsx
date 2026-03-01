@@ -58,6 +58,7 @@ export const VNABookingModal = ({
     }
   ]);
   const [doiTuong, setDoiTuong] = useState<'VFR' | 'ADT' | 'STU'>('VFR');
+  const [phoneKakao, setPhoneKakao] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [successData, setSuccessData] = useState<{ pnr: string } | null>(null);
 
@@ -253,6 +254,15 @@ export const VNABookingModal = ({
       
       params.append('doituong', doiTuong);
 
+      // Add phonekakao - auto prepend 0 if missing
+      if (phoneKakao.trim()) {
+        let phone = phoneKakao.trim();
+        if (phone.length > 0 && !phone.startsWith('0')) {
+          phone = '0' + phone;
+        }
+        params.append('phonekakao', phone);
+      }
+
       // Add passengers in reverse order (last to first)
       for (let i = passengers.length - 1; i >= 0; i--) {
         const formattedName = formatNameForAPI(passengers[i]);
@@ -323,6 +333,14 @@ export const VNABookingModal = ({
                   <SelectItem value="STU">STU</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>Phone/Kakao (không bắt buộc)</Label>
+              <Input
+                value={phoneKakao}
+                onChange={(e) => setPhoneKakao(e.target.value)}
+                placeholder="VD: 0901234567"
+              />
             </div>
             {passengers.map((passenger, index) => (
               <div key={index} className="border rounded-lg p-4 space-y-4">
