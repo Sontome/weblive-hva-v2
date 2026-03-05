@@ -65,7 +65,7 @@ export const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose }) =
         formData.append('files', file);
       });
 
-      const response = await fetch('https://thuhongtour.com/ocr', {
+      const response = await fetch('https://apilive.hanvietair.com/ocr', {
         method: 'POST',
         body: formData,
       });
