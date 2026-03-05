@@ -126,7 +126,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
         ],
       };
 
-      const response = await fetch("https://thuhongtour.com/proxy-gas", {
+      const response = await fetch("https://apilive.hanvietair.com/proxy-gas", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -139,7 +139,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
       if (result?.status === "success") {
           try {
           if (formData.sdt && pnrs.length > 0) {
-            await fetch("https://thuhongtour.com/kakao-add-queue", {
+            await fetch("https://apilive.hanvietair.com/kakao-add-queue", {
               method: "POST",
               headers: {
                 accept: "application/json",
