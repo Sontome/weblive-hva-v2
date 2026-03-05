@@ -17,7 +17,7 @@ export const searchVietJetFlights = async (searchData: FlightSearchData, directF
   }
 
   try {
-    const response = await fetch('https://thuhongtour.com/vj/check-ve-v2', {
+    const response = await fetch('https://apilive.hanvietair.com/vj/check-ve-v2', {
       method: 'POST',
       headers: {
         'accept': 'application/json',
