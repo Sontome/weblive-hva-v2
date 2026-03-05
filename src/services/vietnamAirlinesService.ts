@@ -34,7 +34,7 @@ export const searchVietnamAirlinesFlights = async (
   }
 
   try {
-    const response = await fetch('https://thuhongtour.com/vna/check-ve-v3', {
+    const response = await fetch('https://apilive.hanvietair.com/vna/check-ve-v3', {
       method: 'POST',
       headers: {
         'accept': 'application/json',
