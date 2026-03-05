@@ -137,6 +137,25 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
       const result = await response.json();
 
       if (result?.status === "success") {
+          try {
+          if (formData.sdt && pnrs.length > 0) {
+            await fetch("https://thuhongtour.com/kakao-add-queue", {
+              method: "POST",
+              headers: {
+                accept: "application/json",
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                phone: formData.sdt,
+                name: formData.tenKhach,
+                pnr: pnrs[0], // lấy PNR đầu tiên
+                type: "ISSUED",
+              }),
+            });
+          }
+        } catch (kakaoErr) {
+          console.error("Kakao queue error:", kakaoErr);
+        }
         toast.success("Đã thêm hàng chờ gửi mail thành công", {
           duration: 5000,
           style: {
