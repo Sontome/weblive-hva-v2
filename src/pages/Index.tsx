@@ -13,6 +13,7 @@ import { CheckinModal } from '../components/CheckinModal';
 import { RepriceModal } from '../components/RepriceModal';
 import { VJTicketModal } from '../components/VJTicketModal';
 import { VNATicketModal } from '../components/VNATicketModal';
+import { AddPNRModal } from '../components/AddPNRModal';
 import { Button } from '@/components/ui/button';
 import { searchAllFlights } from '../services/flightService';
 import { searchLowFare, LowFareDay } from '../services/lowfareService';
@@ -111,6 +112,7 @@ const Index = () => {
   const [vjTicketInitialPNR, setVjTicketInitialPNR] = useState<string | undefined>(undefined);
   const [showVNATicketModal, setShowVNATicketModal] = useState(false);
   const [vnaTicketInitialPNR, setVnaTicketInitialPNR] = useState<string | undefined>(undefined);
+  const [showAddPNRModal, setShowAddPNRModal] = useState(false);
   
   // Low fare chart state
   const [lowFareDeparture, setLowFareDeparture] = useState<LowFareDay[]>([]);
@@ -432,6 +434,10 @@ const Index = () => {
         }}
         initialPNR={vnaTicketInitialPNR}
       />
+      <AddPNRModal
+        isOpen={showAddPNRModal}
+        onClose={() => setShowAddPNRModal(false)}
+      />
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-3 sm:py-6">
@@ -483,6 +489,14 @@ const Index = () => {
               className="px-2 sm:px-5 text-xs sm:text-sm"
             >
               🎫 Ảnh vé
+            </Button>
+            <Button
+              onClick={() => setShowAddPNRModal(true)}
+              variant="action-reprice"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              ➕ Thêm PNR
             </Button>
           </div>
         </div>
