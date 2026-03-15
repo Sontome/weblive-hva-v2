@@ -40,6 +40,12 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    let newValue = value;
+
+    // nếu là số điện thoại thì lọc ký tự không phải số
+    if (name === "sdt") {
+      newValue = value.replace(/\D/g, "");
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: value,
