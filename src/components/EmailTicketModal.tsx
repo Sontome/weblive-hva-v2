@@ -48,7 +48,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
     }
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: newValue,
     }));
     // 👉 Nếu người dùng đang nhập vào ô email thì check
     if (name === "email") {
