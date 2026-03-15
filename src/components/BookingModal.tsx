@@ -291,7 +291,10 @@ export const BookingModal = ({
               <Label>Phone/Kakao (không bắt buộc)</Label>
               <Input
                 value={phoneKakao}
-                onChange={(e) => setPhoneKakao(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, ""); // xoá mọi ký tự không phải số
+                  setPhoneKakao(value);
+                }}
                 placeholder="VD: 0901234567"
               />
             </div>
