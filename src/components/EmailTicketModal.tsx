@@ -46,6 +46,17 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
     if (name === "sdt") {
       newValue = value.replace(/\D/g, "");
     }
+    // 🚀 thêm đoạn này ở đây
+    if (name === "pnrs") {
+      const pnrs = value
+        .toUpperCase()
+        .split(/[\s\-;]+/)
+        .filter((pnr) => pnr.trim().length === 6);
+  
+      if (pnrs.length > 20) {
+        toast.warning("Nhập quá 20 PNR!");
+      }
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: newValue,
@@ -113,6 +124,10 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
 
   const performSubmit = async (emailToUse: string) => {
     const pnrs = parsePNRs(formData.pnrs);
+    if (pnrs.length > 20) {
+      toast.error("Tối đa chỉ được nhập 20 mã PNR.");
+      return;
+    }
     
     setIsLoading(true);
 
