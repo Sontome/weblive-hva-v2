@@ -169,8 +169,10 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
               body: JSON.stringify({
                 phone: formData.sdt,
                 name: formData.tenKhach,
-                pnr: pnrs[0], // lấy PNR đầu tiên
+                pnr: formData.pnrs,
                 type: "ISSUED",
+                row_sent: false,
+
               }),
             });
           }
