@@ -303,6 +303,20 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
           ) : (
             <>
               <div className="space-y-2">
+                <Label htmlFor="pnrs">Mã PNR *</Label>
+                <Input
+                  id="pnrs"
+                  name="pnrs"
+                  value={formData.pnrs}
+                  onChange={handleInputChange}
+                  placeholder="ABC123 DEF456 hoặc ABC123-DEF456 hoặc ABC123;DEF456"
+                  required
+                />
+                <p className="text-sm text-muted-foreground">
+                  Nhập một hoặc nhiều mã PNR (6 ký tự mỗi mã), phân tách bằng dấu cách, - hoặc ;
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="email">Email người nhận *</Label>
                 <Input
                   id="email"
@@ -352,20 +366,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
                 <Input id="sdt" name="sdt" value={formData.sdt} onChange={handleInputChange} placeholder="0901234567" />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="pnrs">Mã PNR *</Label>
-                <Input
-                  id="pnrs"
-                  name="pnrs"
-                  value={formData.pnrs}
-                  onChange={handleInputChange}
-                  placeholder="ABC123 DEF456 hoặc ABC123-DEF456 hoặc ABC123;DEF456"
-                  required
-                />
-                <p className="text-sm text-muted-foreground">
-                  Nhập một hoặc nhiều mã PNR (6 ký tự mỗi mã), phân tách bằng dấu cách, - hoặc ;
-                </p>
-              </div>
+              
 
               <div className="flex items-center justify-between space-x-4">
                 <div className="flex items-center space-x-2">
