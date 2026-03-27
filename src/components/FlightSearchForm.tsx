@@ -1115,7 +1115,6 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                       defaultMonth={departureDate}
                       initialFocus
                       locale={vi}
-                      formatters={customFormatters}
                       className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
@@ -1151,7 +1150,6 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                         defaultMonth={departureDate}
                         initialFocus
                         locale={vi}
-                        formatters={customFormatters}
                         className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
