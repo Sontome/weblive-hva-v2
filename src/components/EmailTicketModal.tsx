@@ -34,19 +34,42 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
     type: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [emailWarning, setEmailWarning] = useState(""); // ⚠️ thêm state cảnh báo
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
+  const [emailWarning, setEmailWarning] = useState("");
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
+
+  const fetchPhoneEmail = async (pnr: string) => {
+    try {
+      setIsAutoFilling(true);
+      const res = await fetch(`https://apilive.hanvietair.com/get_phone_email?pnr=${pnr}`, {
+        headers: { 'accept': 'application/json' }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const info = data[0];
+        setFormData((prev) => ({
+          ...prev,
+          email: prev.email.trim() ? prev.email : (info.email || ''),
+          tenKhach: prev.tenKhach.trim() ? prev.tenKhach : (info.name || ''),
+          sdt: prev.sdt.trim() ? prev.sdt : (info.phone || ''),
+        }));
+      }
+    } catch (err) {
+      console.error('Auto-fill error:', err);
+    } finally {
+      setIsAutoFilling(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let newValue = value;
 
-    // nếu là số điện thoại thì lọc ký tự không phải số
     if (name === "sdt") {
       newValue = value.replace(/\D/g, "");
     }
-    // 🚀 thêm đoạn này ở đây
     if (name === "pnrs") {
       const pnrs = value
         .toUpperCase()
@@ -56,12 +79,16 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
       if (pnrs.length > 20) {
         toast.warning("Nhập quá 20 PNR!");
       }
+
+      // Auto-fetch when exactly 1 valid 6-char PNR
+      if (pnrs.length === 1 && /^[A-Za-z0-9]{6}$/.test(pnrs[0])) {
+        fetchPhoneEmail(pnrs[0]);
+      }
     }
     setFormData((prev) => ({
       ...prev,
       [name]: newValue,
     }));
-    // 👉 Nếu người dùng đang nhập vào ô email thì check
     if (name === "email") {
       checkPossibleGmail(value);
     }
@@ -143,6 +170,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
             guiChung: formData.guiChung,
             banner: "",
             type: formData.type,
+            
           },
         ],
       };
@@ -172,7 +200,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
                 pnr: formData.pnrs,
                 type: "ISSUED",
                 row_sent: false,
-
+                email: emailToUse,
               }),
             });
           }
