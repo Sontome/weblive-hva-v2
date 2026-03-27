@@ -59,6 +59,8 @@ export const VNABookingModal = ({
   ]);
   const [doiTuong, setDoiTuong] = useState<'VFR' | 'ADT' | 'STU'>('VFR');
   const [phoneKakao, setPhoneKakao] = useState('');
+  const [emailKakao, setEmailKakao] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [successData, setSuccessData] = useState<{ pnr: string } | null>(null);
 
@@ -207,8 +209,16 @@ export const VNABookingModal = ({
     setPassengers(passengers.filter((_, i) => i !== index));
   };
 
+  const validateEmail = (email: string): boolean => {
+    if (!email.trim()) return true;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  };
+
   const handleSubmit = async () => {
     try {
+      if (emailKakao.trim() && !validateEmail(emailKakao)) {
+        throw new Error("Email không đúng định dạng");
+      }
       // Validate
       for (const passenger of passengers) {
         if (!passenger.Họ.trim() || !passenger.Tên.trim()) {
@@ -261,6 +271,11 @@ export const VNABookingModal = ({
           phone = '0' + phone;
         }
         params.append('phonekakao', phone);
+      }
+
+      // Add emailkakao if provided
+      if (emailKakao.trim()) {
+        params.append('emailkakao', emailKakao.trim());
       }
 
       // Add passengers in reverse order (last to first)
@@ -334,16 +349,35 @@ export const VNABookingModal = ({
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Phone/Kakao (không bắt buộc)</Label>
-              <Input
-                value={phoneKakao}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, ""); // xoá mọi ký tự không phải số
-                  setPhoneKakao(value);
-                }}
-                placeholder="VD: 0901234567"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Phone/Kakao (không bắt buộc)</Label>
+                <Input
+                  value={phoneKakao}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    setPhoneKakao(value);
+                  }}
+                  placeholder="VD: 0901234567"
+                />
+              </div>
+              <div>
+                <Label>Email (không bắt buộc)</Label>
+                <Input
+                  type="email"
+                  value={emailKakao}
+                  onChange={(e) => {
+                    setEmailKakao(e.target.value);
+                    if (e.target.value.trim() && !validateEmail(e.target.value)) {
+                      setEmailError('Email không đúng định dạng');
+                    } else {
+                      setEmailError('');
+                    }
+                  }}
+                  placeholder="VD: example@gmail.com"
+                />
+                {emailError && <p className="text-xs text-destructive mt-1">{emailError}</p>}
+              </div>
             </div>
             {passengers.map((passenger, index) => (
               <div key={index} className="border rounded-lg p-4 space-y-4">
