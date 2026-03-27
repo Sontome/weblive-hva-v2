@@ -1,12 +1,63 @@
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { DayPicker, CaptionProps, useNavigation } from "react-day-picker";
+import { addMonths, addYears } from "date-fns";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+
+function CustomCaption(props: CaptionProps) {
+  const { goToMonth } = useNavigation();
+  const { displayMonth } = props;
+
+  const btnClass = cn(
+    buttonVariants({ variant: "outline" }),
+    "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+  );
+
+  return (
+    <div className="flex justify-center pt-1 relative items-center">
+      <button
+        type="button"
+        onClick={() => goToMonth(addYears(displayMonth, -1))}
+        className={cn(btnClass, "absolute left-0")}
+        title="Năm trước"
+      >
+        <ChevronsLeft className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => goToMonth(addMonths(displayMonth, -1))}
+        className={cn(btnClass, "absolute left-8")}
+        title="Tháng trước"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <div className="text-sm font-medium">
+        {props.displayMonth.toLocaleString("default", { month: "2-digit" })}/{props.displayMonth.getFullYear()}
+      </div>
+      <button
+        type="button"
+        onClick={() => goToMonth(addMonths(displayMonth, 1))}
+        className={cn(btnClass, "absolute right-8")}
+        title="Tháng sau"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => goToMonth(addYears(displayMonth, 1))}
+        className={cn(btnClass, "absolute right-0")}
+        title="Năm sau"
+      >
+        <ChevronsRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
 
 function Calendar({
   className,
@@ -23,7 +74,7 @@ function Calendar({
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
-        nav: "space-x-1 flex items-center",
+        nav: "hidden",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
           "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
@@ -34,16 +85,14 @@ function Calendar({
         head_row: "flex",
         head_cell: cn(
           "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-          // Style Sunday (index 0) and Saturday (index 6)
-          "[&:nth-child(1)]:text-red-600 [&:nth-child(1)]:font-bold", // Sunday
-          "[&:nth-child(7)]:text-blue-600 [&:nth-child(7)]:font-bold"  // Saturday
+          "[&:nth-child(1)]:text-red-600 [&:nth-child(1)]:font-bold",
+          "[&:nth-child(7)]:text-blue-600 [&:nth-child(7)]:font-bold"
         ),
         row: "flex w-full mt-2",
         cell: cn(
           "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-          // Style Sunday and Saturday cells
-          "[&:nth-child(1)]:text-red-600", // Sunday
-          "[&:nth-child(7)]:text-blue-600"  // Saturday
+          "[&:nth-child(1)]:text-red-600",
+          "[&:nth-child(7)]:text-blue-600"
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
@@ -62,8 +111,7 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
+        Caption: CustomCaption,
       }}
       {...props}
     />
