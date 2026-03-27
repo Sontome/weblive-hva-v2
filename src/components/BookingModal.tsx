@@ -53,6 +53,8 @@ export const BookingModal = ({
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [phoneKakao, setPhoneKakao] = useState('');
+  const [emailKakao, setEmailKakao] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   // Popup dữ liệu khi giữ vé thành công
   const [successData, setSuccessData] = useState<{ code: string, deadline: string } | null>(null);
@@ -184,8 +186,16 @@ export const BookingModal = ({
     setPassengers(newPassengers);
   };
 
+  const validateEmail = (email: string): boolean => {
+    if (!email.trim()) return true;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  };
+
   const handleSubmit = async () => {
     try {
+      if (emailKakao.trim() && !validateEmail(emailKakao)) {
+        throw new Error("Email không đúng định dạng");
+      }
       const formattedPassengers = passengers.map(passenger => {
         const formattedLastName = formatName(passenger.Họ, true);
         const formattedFirstName = formatName(passenger.Tên, false);
@@ -234,7 +244,8 @@ export const BookingModal = ({
         bookingkeychieuve: tripType === 'RT' ? (bookingKeyReturn || '') : '',
         sochieu: tripType,
         sanbaydi: departureAirport,
-        ...(phone ? { phonekakao: phone } : {})
+        ...(phone ? { phonekakao: phone } : {}),
+        ...(emailKakao.trim() ? { emailkakao: emailKakao.trim() } : {})
       };
 
       setIsLoading(true);
@@ -287,16 +298,35 @@ export const BookingModal = ({
 
           {/* danh sách hành khách */}
           <div className="space-y-6">
-            <div>
-              <Label>Phone/Kakao (không bắt buộc)</Label>
-              <Input
-                value={phoneKakao}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, ""); // xoá mọi ký tự không phải số
-                  setPhoneKakao(value);
-                }}
-                placeholder="VD: 0901234567"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Phone/Kakao (không bắt buộc)</Label>
+                <Input
+                  value={phoneKakao}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    setPhoneKakao(value);
+                  }}
+                  placeholder="VD: 0901234567"
+                />
+              </div>
+              <div>
+                <Label>Email (không bắt buộc)</Label>
+                <Input
+                  type="email"
+                  value={emailKakao}
+                  onChange={(e) => {
+                    setEmailKakao(e.target.value);
+                    if (e.target.value.trim() && !validateEmail(e.target.value)) {
+                      setEmailError('Email không đúng định dạng');
+                    } else {
+                      setEmailError('');
+                    }
+                  }}
+                  placeholder="VD: example@gmail.com"
+                />
+                {emailError && <p className="text-xs text-destructive mt-1">{emailError}</p>}
+              </div>
             </div>
             {passengers.map((passenger, index) => (
               <div key={index} className="border rounded-lg p-4 space-y-4">
