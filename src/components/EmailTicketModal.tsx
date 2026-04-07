@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PNRCheckModule } from "@/components/PNRCheckModule";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
@@ -304,14 +305,18 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
             <>
               <div className="space-y-2">
                 <Label htmlFor="pnrs">Mã PNR *</Label>
-                <Input
-                  id="pnrs"
-                  name="pnrs"
-                  value={formData.pnrs}
-                  onChange={handleInputChange}
-                  placeholder="ABC123 DEF456 hoặc ABC123-DEF456 hoặc ABC123;DEF456"
-                  required
-                />
+                <div className="flex items-start gap-0">
+                  <Input
+                    id="pnrs"
+                    name="pnrs"
+                    value={formData.pnrs}
+                    onChange={handleInputChange}
+                    placeholder="ABC123 DEF456 hoặc ABC123-DEF456 hoặc ABC123;DEF456"
+                    required
+                    className="flex-1"
+                  />
+                  <PNRCheckModule pnrInput={formData.pnrs} />
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Nhập một hoặc nhiều mã PNR (6 ký tự mỗi mã), phân tách bằng dấu cách, - hoặc ;
                 </p>
