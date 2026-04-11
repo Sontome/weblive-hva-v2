@@ -152,76 +152,82 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
 
   const performSubmit = async (emailToUse: string) => {
     const pnrs = parsePNRs(formData.pnrs);
+  
     if (pnrs.length > 20) {
       toast.error("Tối đa chỉ được nhập 20 mã PNR.");
       return;
     }
-    
+  
     setIsLoading(true);
-
+  
     try {
-      const requestBody = {
-        khachHang: [
-          {
-            pnrs: pnrs,
-            email: emailToUse,
-            tenKhach: formData.tenKhach,
-            xungHo: formData.xungHo,
-            sdt: formData.sdt,
-            guiChung: formData.guiChung,
-            banner: "",
-            type: formData.type,
-            
-          },
-        ],
-      };
-
+      // Luôn gọi Kakao trước
+      const kakaoRes = await fetch("https://apilive.hanvietair.com/kakao-add-queue", {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone: formData.sdt || "",
+          name: formData.tenKhach,
+          pnr: formData.pnrs,
+          type: "ISSUED",
+          row_sent: false,
+          email: emailToUse,
+        }),
+      });
+  
+      if (!kakaoRes.ok) {
+        throw new Error("KAKAO_FAILED");
+      }
+  
+      const kakaoResult = await kakaoRes.json();
+  
+      if (kakaoResult?.status && kakaoResult.status !== "success") {
+        throw new Error("KAKAO_FAILED");
+      }
+  
+      // Kakao OK mới gửi mail
       const response = await fetch("https://apilive.hanvietair.com/proxy-gas", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          khachHang: [
+            {
+              pnrs,
+              email: emailToUse,
+              tenKhach: formData.tenKhach,
+              xungHo: formData.xungHo,
+              sdt: formData.sdt,
+              guiChung: formData.guiChung,
+              banner: "",
+              type: formData.type,
+            },
+          ],
+        }),
       });
-
+  
       const result = await response.json();
-
+  
       if (result?.status === "success") {
-          try {
-          if (formData.sdt && pnrs.length > 0) {
-            await fetch("https://apilive.hanvietair.com/kakao-add-queue", {
-              method: "POST",
-              headers: {
-                accept: "application/json",
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                phone: formData.sdt,
-                name: formData.tenKhach,
-                pnr: formData.pnrs,
-                type: "ISSUED",
-                row_sent: false,
-                email: emailToUse,
-              }),
-            });
-          }
-        } catch (kakaoErr) {
-          console.error("Kakao queue error:", kakaoErr);
-        }
-        toast.success("Đã thêm hàng chờ gửi mail thành công", {
-          duration: 5000,
-          style: {
-            fontSize: "16px",
-            padding: "16px",
-          },
-        });
+        toast.success("Đã thêm hàng chờ gửi mail thành công");
         handleClose();
       } else {
-        toast.error("Có lỗi xảy ra khi gửi yêu cầu");
+        toast.error("Gửi mail thất bại");
       }
+  
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("Có lỗi xảy ra khi gửi yêu cầu");
+      console.error(error);
+  
+      if (error instanceof Error && error.message === "KAKAO_FAILED") {
+        toast.error("Thêm Kakao queue thất bại. Vui lòng nhấn Submit lại.");
+      } else {
+        toast.error("Có lỗi xảy ra. Vui lòng thử lại.");
+      }
+  
     } finally {
       setIsLoading(false);
     }
