@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Copy, Download, FileText } from 'lucide-react';
-
+import { PNRCheckModule } from "@/components/PNRCheckModule";
 interface PNRCheckModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -169,10 +169,12 @@ export const PNRCheckModal = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex space-x-2">
+          {/* Row input + buttons */}
+          <div className="flex items-end gap-2">
+            {/* Input block */}
             <div className="flex-1">
               <Label htmlFor="pnr">Mã PNR</Label>
-
+        
               <Input
                 id="pnr"
                 value={pnrCode}
@@ -183,16 +185,20 @@ export const PNRCheckModal = ({
                 className="uppercase"
               />
             </div>
-
-            <div className="flex items-end">
+        
+            {/* Nút Check mặt vé */}
+            <div className="shrink-0">
+              <PNRCheckModule pnrInput={pnrCode} />
+            </div>
+        
+            {/* Nút Kiểm tra */}
+            <div className="shrink-0">
               <Button
                 onClick={handleCheck}
                 disabled={isLoading || !pnrCode.trim()}
                 className="whitespace-nowrap"
               >
-                {isLoading
-                  ? 'Đang kiểm tra...'
-                  : 'Kiểm tra'}
+                {isLoading ? "Đang kiểm tra..." : "Kiểm tra"}
               </Button>
             </div>
           </div>
