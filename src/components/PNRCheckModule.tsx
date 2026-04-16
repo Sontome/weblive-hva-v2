@@ -91,7 +91,7 @@ export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
 
         if (vjText.trim() !== '"VJ"' && vjText.trim() !== "VJ") {
           await fetch(
-            `https://apilive.hanvietair.com/sendmailvna?code=${pnr}&ssid=sendmail`,
+            `https://apilive.hanvietair.com/sendmailvnamulti?code=${pnr}&ssid=sendmailmulti`,
             { headers: { accept: "application/json" } }
           );
         }
