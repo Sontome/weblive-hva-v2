@@ -34,7 +34,7 @@ export const EmployeeCheckInModal = ({ isOpen, onClose, onSuccess }: Props) => {
           .from('employees')
           .select('id, name, active')
           .eq('active', true)
-          .order('name');
+          .order('sort_order');
         if (error) throw error;
         setEmployees((data as Employee[]) || []);
       } catch (err: any) {
