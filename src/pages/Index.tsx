@@ -14,6 +14,8 @@ import { RepriceModal } from '../components/RepriceModal';
 import { VJTicketModal } from '../components/VJTicketModal';
 import { VNATicketModal } from '../components/VNATicketModal';
 import { AddPNRModal } from '../components/AddPNRModal';
+import { EmployeeCheckInModal } from '../components/attendance/EmployeeCheckInModal';
+import { CurrentOnlineStatus } from '../components/attendance/CurrentOnlineStatus';
 import { Button } from '@/components/ui/button';
 import { searchAllFlights } from '../services/flightService';
 import { searchLowFare, LowFareDay } from '../services/lowfareService';
@@ -113,6 +115,8 @@ const Index = () => {
   const [showVNATicketModal, setShowVNATicketModal] = useState(false);
   const [vnaTicketInitialPNR, setVnaTicketInitialPNR] = useState<string | undefined>(undefined);
   const [showAddPNRModal, setShowAddPNRModal] = useState(false);
+  const [showAttendanceCheckIn, setShowAttendanceCheckIn] = useState(false);
+  const [onlineRefreshKey, setOnlineRefreshKey] = useState(0);
   
   // Low fare chart state
   const [lowFareDeparture, setLowFareDeparture] = useState<LowFareDay[]>([]);
@@ -438,9 +442,35 @@ const Index = () => {
         isOpen={showAddPNRModal}
         onClose={() => setShowAddPNRModal(false)}
       />
+      <EmployeeCheckInModal
+        isOpen={showAttendanceCheckIn}
+        onClose={() => setShowAttendanceCheckIn(false)}
+        onSuccess={() => setOnlineRefreshKey((k) => k + 1)}
+      />
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-3 sm:py-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <CurrentOnlineStatus refreshKey={onlineRefreshKey} />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => setShowAttendanceCheckIn(true)}
+                variant="action-checkin"
+                size="sm"
+                className="px-2 sm:px-4 text-xs sm:text-sm"
+              >
+                🟢 Check In
+              </Button>
+              <Button
+                onClick={() => navigate('/attendance-reports')}
+                variant="outline"
+                size="sm"
+                className="px-2 sm:px-4 text-xs sm:text-sm"
+              >
+                📊 Attendance Reports
+              </Button>
+            </div>
+          </div>
           <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-3">
             <Button
               onClick={() => setShowVJTicketModal(true)}
