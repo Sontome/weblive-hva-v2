@@ -179,8 +179,8 @@ export const OtherBookingModal = ({
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const code = data.mã_giữ_vé || data.pnr || data.code;
-      const deadline = data.hạn_thanh_toán || data.deadline || '';
+      const code = data.mã_giữ_vé || data.pnr || data.status_code;
+      const deadline = data.hạn_thanh_toán || data.message || '';
       if (code) {
         setSuccessData({ code, deadline });
         if (onBookingSuccess) {
@@ -314,10 +314,10 @@ export const OtherBookingModal = ({
             <DialogTitle>🎉 Giữ vé thành công!</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-3">
-            <p className="text-sm text-gray-600">Mã giữ vé:</p>
+            {/* <p className="text-sm text-gray-600">Mã giữ vé:</p> */}
             <div className="flex items-center justify-center gap-2">
               <span className="text-xl font-bold text-green-600">{successData?.code}</span>
-              <Button
+              {/* <Button
                 size="sm"
                 variant="outline"
                 onClick={() => {
@@ -326,7 +326,7 @@ export const OtherBookingModal = ({
                 }}
               >
                 <Copy className="w-4 h-4 mr-1" /> Copy
-              </Button>
+              </Button> */}
             </div>
             {successData?.deadline && (
               <p className="text-sm text-gray-500">Hạn thanh toán: <b>{successData.deadline}</b></p>
