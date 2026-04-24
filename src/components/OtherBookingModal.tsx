@@ -14,6 +14,7 @@ interface PaxRow {
   Họ: string;
   Tên: string;
   Giới_tính: 'NAM' | 'NU';
+  birthday: string;
 }
 
 interface OtherBookingModalProps {
@@ -57,12 +58,32 @@ const normalizeDate = (d: string) => {
   return d;
 };
 
+// Convert yyyy-MM-dd input to yyyyMMdd for API
+const formatBirthday = (date: string): string => {
+  if (!date) return '';
+  return date.replace(/-/g, '').replace(/\//g, '');
+};
+
+// Compute age relative to a reference date (flight departure)
+const getAge = (birthday: string, refDateStr: string): number => {
+  if (!birthday) return -1;
+  const bd = new Date(birthday);
+  if (isNaN(bd.getTime())) return -1;
+  // Parse refDate from yyyy/MM/dd or yyyy-MM-dd
+  const ref = refDateStr ? new Date(refDateStr.replace(/\//g, '-')) : new Date();
+  if (isNaN(ref.getTime())) return -1;
+  let age = ref.getFullYear() - bd.getFullYear();
+  const m = ref.getMonth() - bd.getMonth();
+  if (m < 0 || (m === 0 && ref.getDate() < bd.getDate())) age--;
+  return age;
+};
+
 const buildInitial = (adults: number, children: number, infants: number): PaxRow[] => {
   const rows: PaxRow[] = [];
-  for (let i = 0; i < adults; i++) rows.push({ type: 'ADT', Họ: '', Tên: '', Giới_tính: 'NAM' });
-  for (let i = 0; i < children; i++) rows.push({ type: 'CHD', Họ: '', Tên: '', Giới_tính: 'NAM' });
-  for (let i = 0; i < infants; i++) rows.push({ type: 'INF', Họ: '', Tên: '', Giới_tính: 'NAM' });
-  if (rows.length === 0) rows.push({ type: 'ADT', Họ: '', Tên: '', Giới_tính: 'NAM' });
+  for (let i = 0; i < adults; i++) rows.push({ type: 'ADT', Họ: '', Tên: '', Giới_tính: 'NAM', birthday: '' });
+  for (let i = 0; i < children; i++) rows.push({ type: 'CHD', Họ: '', Tên: '', Giới_tính: 'NAM', birthday: '' });
+  for (let i = 0; i < infants; i++) rows.push({ type: 'INF', Họ: '', Tên: '', Giới_tính: 'NAM', birthday: '' });
+  if (rows.length === 0) rows.push({ type: 'ADT', Họ: '', Tên: '', Giới_tính: 'NAM', birthday: '' });
   return rows;
 };
 
@@ -113,7 +134,7 @@ export const OtherBookingModal = ({
       toast({ title: 'Lỗi', description: `Số khách không vượt quá ${maxSeats} ghế còn lại`, variant: 'destructive' });
       return;
     }
-    setPassengers([...passengers, { type, Họ: '', Tên: '', Giới_tính: 'NAM' }]);
+    setPassengers([...passengers, { type, Họ: '', Tên: '', Giới_tính: 'NAM', birthday: '' }]);
   };
 
   const removePax = (idx: number) => {
@@ -143,6 +164,22 @@ export const OtherBookingModal = ({
         );
       }
 
+      // Validate birthday & age vs flight departure date
+      const refDep = normalizeDate(depDate);
+      passengers.forEach((p, i) => {
+        if (!p.birthday) {
+          throw new Error(`Hành khách ${i + 1}: vui lòng nhập ngày sinh`);
+        }
+        const age = getAge(p.birthday, refDep);
+        if (age < 0) throw new Error(`Hành khách ${i + 1}: ngày sinh không hợp lệ`);
+        if (p.type === 'CHD' && (age < 2 || age >= 12)) {
+          throw new Error(`Hành khách ${i + 1} là Trẻ em, tuổi phải từ 2 đến dưới 12 (hiện ${age})`);
+        }
+        if (p.type === 'INF' && age >= 2) {
+          throw new Error(`Hành khách ${i + 1} là Em bé, tuổi phải dưới 2 (hiện ${age})`);
+        }
+      });
+
       const customer = passengers.map((p) => {
         const lastname = formatName(p.Họ, true);
         const firstname = formatName(p.Tên, false);
@@ -153,6 +190,7 @@ export const OtherBookingModal = ({
           gender: p.Giới_tính,
           firstname,
           lastname,
+          birthday: formatBirthday(p.birthday),
         };
       });
 
@@ -255,7 +293,7 @@ export const OtherBookingModal = ({
                     </Button>
                   )}
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   <div>
                     <Label>Họ</Label>
                     <Input value={p.Họ} onChange={(e) => handleChange(idx, 'Họ', e.target.value)} placeholder="NGUYEN" />
@@ -284,6 +322,14 @@ export const OtherBookingModal = ({
                         <SelectItem value="INF">Em bé</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div>
+                    <Label>Ngày sinh</Label>
+                    <Input
+                      type="date"
+                      value={p.birthday}
+                      onChange={(e) => handleChange(idx, 'birthday', e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
@@ -316,7 +362,7 @@ export const OtherBookingModal = ({
           <div className="space-y-3 py-3">
             {/* <p className="text-sm text-gray-600">Mã giữ vé:</p> */}
             <div className="flex items-center justify-center gap-2">
-              <span className="text-xl font-bold text-green-600">{successData?.code}</span>
+              <span className="text-xl font-bold text-green-600">{successData?.deadline}</span>
               {/* <Button
                 size="sm"
                 variant="outline"
