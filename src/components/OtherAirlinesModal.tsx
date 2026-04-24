@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Plane, Users, Copy, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { toast } from 'sonner';
-import { BookingModal } from './BookingModal';
+import { OtherBookingModal } from './OtherBookingModal';
 
 interface FlightLeg {
   hãng: string;
@@ -58,6 +58,11 @@ interface FlightResult {
 
 interface SearchData {
   tripType: 'OW' | 'RT';
+  departureDate?: string;
+  returnDate?: string;
+  adults?: number;
+  children?: number;
+  infants?: number;
   oneWayFee: number;
   roundTripFeeVietjet: number;
   roundTripFeeVNA: number;
@@ -481,19 +486,31 @@ export const OtherAirlinesModal: React.FC<OtherAirlinesModalProps> = ({
       </Dialog>
 
       {selectedFlight && (
-        <BookingModal
-          isOpen={bookingModalOpen}
-          onClose={() => {
-            setBookingModalOpen(false);
-            setSelectedFlight(null);
-          }}
-          bookingKey={(selectedFlight['chiều đi'] as FlightLeg)?.BookingKey || (selectedFlight['chiều_đi'] as FlightLeg)?.BookingKey || ''}
-          bookingKeyReturn={(selectedFlight['chiều về'] as FlightLeg)?.BookingKey || (selectedFlight['chiều_về'] as FlightLeg)?.BookingKey}
-          tripType={searchData?.tripType || 'OW'}
-          departureAirport={(selectedFlight['chiều đi'] as FlightLeg)?.nơi_đi || (selectedFlight['chiều_đi'] as VNAFlightLeg)?.nơi_đi || ''}
-          maxSeats={parseInt(selectedFlight['thông_tin_chung'].số_ghế_còn)}
-          onBookingSuccess={onBookingSuccess}
-        />
+        (() => {
+          const outbound = (selectedFlight['chiều đi'] || selectedFlight['chiều_đi']) as FlightLeg | VNAFlightLeg | undefined;
+          if (!outbound) return null;
+          return (
+            <OtherBookingModal
+              isOpen={bookingModalOpen}
+              onClose={() => {
+                setBookingModalOpen(false);
+                setSelectedFlight(null);
+              }}
+              hang={outbound.hãng}
+              fromCode={outbound.nơi_đi}
+              toCode={outbound.nơi_đến}
+              depDate={searchData?.departureDate || ''}
+              arrDate={searchData?.returnDate || ''}
+              indexId={outbound.id}
+              tripType={searchData?.tripType || 'OW'}
+              adults={searchData?.adults ?? 1}
+              children={searchData?.children ?? 0}
+              infants={searchData?.infants ?? 0}
+              maxSeats={parseInt(selectedFlight['thông_tin_chung'].số_ghế_còn)}
+              onBookingSuccess={onBookingSuccess}
+            />
+          );
+        })()
       )}
     </>
   );
