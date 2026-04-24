@@ -93,7 +93,7 @@ interface OtherAirlinesModalProps {
 }
 
 // Airline configuration for display names and grouping
-const LEFT_COLUMN_AIRLINES = ['OZ', 'TW', 'LJ', 'BX']; // Asian, Tway, Jin Air, Air Busan
+const LEFT_COLUMN_AIRLINES = ['OZ', 'TW', 'LJ', 'BX','WE']; // Asian, Tway, Jin Air, Air Busan
 const RIGHT_COLUMN_AIRLINES = ['KE', '7C', 'YP', 'RS']; // Korean Air, Jeju, Premia, Air Seoul
 
 const AIRLINE_NAMES: Record<string, string> = {
@@ -105,6 +105,7 @@ const AIRLINE_NAMES: Record<string, string> = {
   '7C': 'Jeju Air',
   'YP': 'Premia',
   'RS': 'Air Seoul',
+  'WE': 'Parata Air',
 };
 
 const AIRLINE_COLORS: Record<string, string> = {
@@ -116,6 +117,7 @@ const AIRLINE_COLORS: Record<string, string> = {
   '7C': 'bg-orange-600',
   'YP': 'bg-purple-500',
   'RS': 'bg-teal-500',
+  'WE': 'bg-blue-300',
 };
 
 const AIRLINE_BAGGAGE: Record<string, { carryOn: string; checked?: string }> = {
@@ -127,6 +129,7 @@ const AIRLINE_BAGGAGE: Record<string, { carryOn: string; checked?: string }> = {
   'OZ': { carryOn: '10kg', checked: '23kg' },
   'RS': { carryOn: '10kg', checked: '15kg' },
   'BX': { carryOn: '10kg', checked: '15kg' },
+  'WE': { carryOn: '0kg', checked: '0kg' },
 };
 
 export const OtherAirlinesModal: React.FC<OtherAirlinesModalProps> = ({
@@ -472,7 +475,7 @@ export const OtherAirlinesModal: React.FC<OtherAirlinesModalProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
             {/* Left Column: Asian, Tway, Jin Air, Air Busan */}
             <div className="border-r lg:border-r lg:pr-4">
-              <h3 className="text-sm font-bold text-gray-700 mb-3 bg-gray-100 p-2 rounded">Asian, Tway, Jin Air, Air Busan</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-3 bg-gray-100 p-2 rounded">Asian, Tway, Jin Air, Air Busan, Parata Air</h3>
               {LEFT_COLUMN_AIRLINES.map(airline => renderAirlineSection(airline))}
             </div>
 
