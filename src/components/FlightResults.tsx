@@ -5,6 +5,7 @@ import { BookingModal } from './BookingModal';
 import { VNABookingModal } from './VNABookingModal';
 import { OtherAirlinesModal } from './OtherAirlinesModal';
 import { Button } from './ui/button';
+import { useRouteDiscounts } from '@/hooks/useRouteDiscounts';
 
 interface FlightLeg {
   hãng: string;
@@ -161,6 +162,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   const [vnaBookingModalOpen, setVnaBookingModalOpen] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<FlightResult | null>(null);
   const [otherAirlinesModalOpen, setOtherAirlinesModalOpen] = useState(false);
+  const { getDiscount: getRouteDiscount } = useRouteDiscounts();
 
   const toggleDetails = (index: number) => {
     setExpandedDetails(prev => ({
@@ -278,6 +280,21 @@ const FlightResults: React.FC<FlightResultsProps> = ({
       }
     }
   
+    // ===== Giảm giá theo chặng — chỉ áp dụng cho VNA =====
+    // RT: cộng dồn giảm chiều đi + chiều về.
+    if (isVNA && flightResult) {
+      const outbound = flightResult['chiều_đi'];
+      if (outbound?.nơi_đi && outbound?.nơi_đến) {
+        finalPrice -= getRouteDiscount('VNA', outbound.nơi_đi, outbound.nơi_đến);
+      }
+      if (searchData.tripType === 'RT') {
+        const inbound = flightResult['chiều_về'];
+        if (inbound?.nơi_đi && inbound?.nơi_đến) {
+          finalPrice -= getRouteDiscount('VNA', inbound.nơi_đi, inbound.nơi_đến);
+        }
+      }
+    }
+
     return finalPrice;
   };
 
