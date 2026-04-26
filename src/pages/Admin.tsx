@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogOut, Save, ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RouteDiscountManager from "@/components/admin/RouteDiscountManager";
 
 interface PriceConfig {
   id: string;
@@ -374,19 +375,32 @@ const Admin = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="page" className="w-full">
-          <TabsList className="mb-4 grid grid-cols-3 w-full max-w-md">
-            {configs.map((config) => (
-              <TabsTrigger key={config.customer_mode} value={config.customer_mode}>
-                {getModeLabel(config.customer_mode)}
-              </TabsTrigger>
-            ))}
+        <Tabs defaultValue="pricing" className="w-full">
+          <TabsList className="mb-4 grid grid-cols-2 w-full max-w-md">
+            <TabsTrigger value="pricing">Cấu hình giá</TabsTrigger>
+            <TabsTrigger value="routes">Giảm theo chặng (VNA)</TabsTrigger>
           </TabsList>
-          {configs.map((config) => (
-            <TabsContent key={config.customer_mode} value={config.customer_mode}>
-              {renderModeConfig(config)}
-            </TabsContent>
-          ))}
+
+          <TabsContent value="pricing">
+            <Tabs defaultValue="page" className="w-full">
+              <TabsList className="mb-4 grid grid-cols-3 w-full max-w-md">
+                {configs.map((config) => (
+                  <TabsTrigger key={config.customer_mode} value={config.customer_mode}>
+                    {getModeLabel(config.customer_mode)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              {configs.map((config) => (
+                <TabsContent key={config.customer_mode} value={config.customer_mode}>
+                  {renderModeConfig(config)}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </TabsContent>
+
+          <TabsContent value="routes">
+            <RouteDiscountManager />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
