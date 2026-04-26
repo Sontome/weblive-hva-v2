@@ -15,6 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { PriceConfig } from "@/hooks/usePriceConfigs";
+import { useRouteDiscounts } from "@/hooks/useRouteDiscounts";
 
 interface FlightSearchData {
   departure: string;
@@ -248,6 +249,7 @@ const AirportSelect: React.FC<{
 };
 
 const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading, customerType: propCustomerType, priceConfigs }) => {
+  const { discounts: routeDiscounts } = useRouteDiscounts();
   // Helper function to get config values from database or fallback to defaults
   const getConfigValues = (mode: string) => {
     const config = priceConfigs?.[mode];
@@ -1004,6 +1006,35 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                     ))}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {discountSectionOpen && (
+              <div className="mt-4 pt-3 border-t">
+                <h5 className="text-xs font-medium text-blue-700 mb-2">
+                  Giảm giá theo hành trình (VNA)
+                </h5>
+                {routeDiscounts.filter((d) => d.airline_code === "VNA" && d.is_active).length === 0 ? (
+                  <p className="text-xs text-gray-500 italic">
+                    Chưa có cấu hình chặng nào.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    {routeDiscounts
+                      .filter((d) => d.airline_code === "VNA" && d.is_active)
+                      .map((d) => (
+                        <div key={d.id} className="text-xs text-gray-700">
+                          <span className="font-medium">
+                            {d.origin_code} → {d.destination_code}
+                          </span>
+                          <span className="text-gray-500">: giảm </span>
+                          <span className="text-blue-700 font-semibold">
+                            {Number(d.discount_amount).toLocaleString("de-DE")}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
