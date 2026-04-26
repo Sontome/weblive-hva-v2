@@ -203,6 +203,39 @@ export type Database = {
         }
         Relationships: []
       }
+      route_discounts: {
+        Row: {
+          airline_code: string
+          created_at: string
+          destination_code: string
+          discount_amount: number
+          id: string
+          is_active: boolean
+          origin_code: string
+          updated_at: string
+        }
+        Insert: {
+          airline_code?: string
+          created_at?: string
+          destination_code: string
+          discount_amount?: number
+          id?: string
+          is_active?: boolean
+          origin_code: string
+          updated_at?: string
+        }
+        Update: {
+          airline_code?: string
+          created_at?: string
+          destination_code?: string
+          discount_amount?: number
+          id?: string
+          is_active?: boolean
+          origin_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
