@@ -13,6 +13,7 @@ import { CheckinModal } from '../components/CheckinModal';
 import { RepriceModal } from '../components/RepriceModal';
 import { VJTicketModal } from '../components/VJTicketModal';
 import { VNATicketModal } from '../components/VNATicketModal';
+import { OtherTicketModal } from '../components/OtherTicketModal';
 import { AddPNRModal } from '../components/AddPNRModal';
 import { EmployeeCheckInModal } from '../components/attendance/EmployeeCheckInModal';
 import { CurrentOnlineStatus } from '../components/attendance/CurrentOnlineStatus';
@@ -114,6 +115,7 @@ const Index = () => {
   const [vjTicketInitialPNR, setVjTicketInitialPNR] = useState<string | undefined>(undefined);
   const [showVNATicketModal, setShowVNATicketModal] = useState(false);
   const [vnaTicketInitialPNR, setVnaTicketInitialPNR] = useState<string | undefined>(undefined);
+  const [showOtherTicketModal, setShowOtherTicketModal] = useState(false);
   const [showAddPNRModal, setShowAddPNRModal] = useState(false);
   const [showAttendanceCheckIn, setShowAttendanceCheckIn] = useState(false);
   const [onlineRefreshKey, setOnlineRefreshKey] = useState(0);
@@ -438,6 +440,10 @@ const Index = () => {
         }}
         initialPNR={vnaTicketInitialPNR}
       />
+      <OtherTicketModal
+        isOpen={showOtherTicketModal}
+        onClose={() => setShowOtherTicketModal(false)}
+      />
       <AddPNRModal
         isOpen={showAddPNRModal}
         onClose={() => setShowAddPNRModal(false)}
@@ -487,6 +493,14 @@ const Index = () => {
               className="px-2 sm:px-5 text-xs sm:text-sm"
             >
               🎫 Vé VNA
+            </Button>
+            <Button
+              onClick={() => setShowOtherTicketModal(true)}
+              variant="action-ticket"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              🎫 Vé Other
             </Button>
             <Button
               onClick={() => setShowRepriceModal(true)}
