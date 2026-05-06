@@ -280,7 +280,9 @@ const Index = () => {
       if (result.status_code === 200 && result.body && result.body.length > 0) {
         console.log('VietJet flights from API:', result.body.length);
         console.log('Adding all VietJet flights without filtering');
-        setVjetResults(result.body);
+        const freebag = result.freebag || { 'chiều_đi': false, 'chiều_về': false };
+        const vjBody = result.body.map((f: any) => ({ ...f, freebag }));
+        setVjetResults(vjBody);
         setApiStatus(prev => ({ ...prev, vj: 'success' }));
         
         const flightTypeText = result.flightType === 'direct' ? 'bay thẳng' : 'nối chuyến';
