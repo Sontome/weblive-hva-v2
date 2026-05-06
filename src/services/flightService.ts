@@ -47,7 +47,8 @@ export const searchAllFlights = async (
           status_code: 200,
           body: directResults.body,
           airline: airline === 'VietJet' ? 'VJ' : 'VNA',
-          flightType: 'direct'
+          flightType: 'direct',
+          freebag: (directResults as any).freebag
         });
         return;
       }
@@ -62,7 +63,8 @@ export const searchAllFlights = async (
           status_code: 200,
           body: allResults.body,
           airline: airline === 'VietJet' ? 'VJ' : 'VNA',
-          flightType: 'connecting'
+          flightType: 'connecting',
+          freebag: (allResults as any).freebag
         });
       } else {
         console.log(`No ${airline} flights found`);
