@@ -536,6 +536,16 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     const isVNA = outbound.hãng === 'VNA';
     const isVJ = outbound.hãng === 'VJ';
     const isOtherAirline = outbound.hãng !== 'VNA' && outbound.hãng !== 'VJ';
+    const freebag = (result as any).freebag as { 'chiều_đi'?: boolean; 'chiều_về'?: boolean } | undefined;
+    const vjFreeOut = isVJ && outbound.loại_vé === 'ECO' && !!freebag?.['chiều_đi'];
+    const vjFreeIn = isVJ && !!inbound && inbound.loại_vé === 'ECO' && !!freebag?.['chiều_về'];
+    const freebagLabel = vjFreeOut && vjFreeIn
+      ? 'Free 20kg 2 chiều'
+      : vjFreeOut
+        ? 'Free 20kg chiều đi'
+        : vjFreeIn
+          ? 'Free 20kg chiều về'
+          : '';
     const finalPrice = calculateFinalPrice(result['thông_tin_chung'].giá_vé, result);
     const copyTemplate = generateCopyTemplate(result);
     const ticketClassSummary = getTicketClassSummary(result);
@@ -559,10 +569,15 @@ const FlightResults: React.FC<FlightResultsProps> = ({
       <div
         key={index}
         className={`
-          bg-white rounded-lg shadow-md overflow-hidden mb-2 border
+          relative bg-white rounded-lg shadow-md overflow-hidden mb-2 border
           ${isOtherAirline ? 'border-2 border-yellow-500 shadow-yellow-200' : 'border-gray-200'}
         `}
       >
+        {freebagLabel && (
+          <div className="absolute top-1 right-1 z-10 px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] font-bold shadow-md border border-emerald-300">
+            🧳 {freebagLabel}
+          </div>
+        )}
         <div className="p-2">
           {/* Flight Info Section - More compact */}
           <div className="space-y-1 mb-2">
