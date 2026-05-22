@@ -6,6 +6,8 @@ import { VNABookingModal } from './VNABookingModal';
 import { OtherAirlinesModal } from './OtherAirlinesModal';
 import { Button } from './ui/button';
 import { useRouteDiscounts } from '@/hooks/useRouteDiscounts';
+import { ChangeTicketModal } from './change-ticket/ChangeTicketModal';
+import { RefreshCw } from 'lucide-react';
 
 interface FlightLeg {
   hãng: string;
@@ -163,6 +165,8 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   const [selectedFlight, setSelectedFlight] = useState<FlightResult | null>(null);
   const [otherAirlinesModalOpen, setOtherAirlinesModalOpen] = useState(false);
   const { getDiscount: getRouteDiscount } = useRouteDiscounts();
+  const [changeTicketOpen, setChangeTicketOpen] = useState(false);
+  const [changeTicketFlight, setChangeTicketFlight] = useState<FlightResult | null>(null);
 
   const toggleDetails = (index: number) => {
     setExpandedDetails(prev => ({
@@ -578,6 +582,19 @@ const FlightResults: React.FC<FlightResultsProps> = ({
             🧳 {freebagLabel}
           </div>
         )}
+        {isVNA && (
+          <button
+            onClick={() => {
+              setChangeTicketFlight(result);
+              setChangeTicketOpen(true);
+            }}
+            title="Đổi vé"
+            aria-label="Đổi vé"
+            className="absolute top-1 right-1 z-10 inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-md border border-amber-300 transition-colors"
+          >
+            <RefreshCw className="h-3 w-3" />
+          </button>
+        )}
         <div className="p-2">
           {/* Flight Info Section - More compact */}
           <div className="space-y-1 mb-2">
@@ -708,7 +725,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
 
           {/* Booking Button - For VNA flights */}
           {isVNA && (
-            <div className="mt-2 flex justify-end">
+            <div className="mt-2 flex justify-end gap-2">
               <button
                 onClick={() => handleVNABooking(result)}
                 className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs transition-colors"
@@ -1084,6 +1101,15 @@ const FlightResults: React.FC<FlightResultsProps> = ({
             />
           </>
         )}
+
+        <ChangeTicketModal
+          isOpen={changeTicketOpen}
+          onClose={() => {
+            setChangeTicketOpen(false);
+            setChangeTicketFlight(null);
+          }}
+          flight={changeTicketFlight as unknown as { chiều_đi?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string }; chiều_về?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string } } | null}
+        />
       </div>
     );
   }
@@ -1181,6 +1207,15 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           />
         </>
       )}
+
+      <ChangeTicketModal
+        isOpen={changeTicketOpen}
+        onClose={() => {
+          setChangeTicketOpen(false);
+          setChangeTicketFlight(null);
+        }}
+        flight={changeTicketFlight as unknown as { chiều_đi?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string }; chiều_về?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string } } | null}
+      />
     </div>
   );
 };
