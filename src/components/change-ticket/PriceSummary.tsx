@@ -89,7 +89,7 @@ export const PriceSummary: React.FC<{
         <div className="rounded-lg bg-white/70 p-2">
 
           <div className="text-xs text-gray-500 mb-1">
-            Phí phạt
+            Phí đổi của hãng
           </div>
 
           {editingField === 'penalty' ? (
