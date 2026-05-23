@@ -31,6 +31,7 @@ export interface ChangeTicketResponse {
   seg_new?: Segment[];
   new_price?: ChangePrice;
   message?: string;
+  namelist?: string[];
   [key: string]: unknown;
 }
 
