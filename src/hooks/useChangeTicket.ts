@@ -75,7 +75,7 @@ export function useChangeTicket() {
           arr: ctx.arr,
           depdate: ctx.depdate,
           deptime: ctx.deptime,
-          deptimedone: ctx.deptime,
+          deptimedone: ctx.deptimedone,
           ...(ctx.arrdate ? { arrdate: ctx.arrdate } : {}),
           ...(ctx.arrtime ? { arrtime: ctx.arrtime } : {}),
           ...(ctx.arrtimedone ? { arrtimedone: ctx.arrtimedone } : {}),
