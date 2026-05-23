@@ -50,9 +50,17 @@ function buildContext(flight: FlightLike | null): FlightContext | null {
   if (!flight) return null;
   const out = flight.chiều_đi;
   const back = flight.chiều_về;
-  if (!out?.nơi_đi || !out?.nơi_đến || !out?.ngày_cất_cánh || !out?.giờ_cất_cánh|| !out?.giờ_hạ_cánh) {
+
+  if (
+    !out?.nơi_đi ||
+    !out?.nơi_đến ||
+    !out?.ngày_cất_cánh ||
+    !out?.giờ_cất_cánh ||
+    !out?.giờ_hạ_cánh
+  ) {
     return null;
   }
+
   return {
     dep: out.nơi_đi,
     arr: out.nơi_đến,
@@ -66,7 +74,11 @@ function buildContext(flight: FlightLike | null): FlightContext | null {
   };
 }
 
-export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) => {
+export const ChangeTicketModal: React.FC<Props> = ({
+  isOpen,
+  onClose,
+  flight,
+}) => {
   const {
     stage,
     pnr,
@@ -112,11 +124,13 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
         scale: 2,
         useCORS: true,
       });
+
       canvas.toBlob(async (blob) => {
         if (!blob) {
           toast.error('Không thể tạo ảnh');
           return;
         }
+
         try {
           // @ts-ignore
           await navigator.clipboard.write([
@@ -181,12 +195,12 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
           </div>
         </div>
 
-        {/* STAGE: input */}
         {stage === 'input' && (
           <div className="space-y-3 py-3">
             <label className="block text-sm font-medium text-gray-700">
               Mã đặt chỗ (PNR)
             </label>
+
             <Input
               autoFocus
               value={pnr}
@@ -200,15 +214,19 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
               maxLength={6}
               className="uppercase tracking-wider font-mono"
             />
+
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={handleClose} disabled={loading}>
-                <X className="h-4 w-4 mr-1" /> Hủy
+                <X className="h-4 w-4 mr-1" />
+                Hủy
               </Button>
+
               <Button onClick={runPreCheck} disabled={loading || !pnr.trim()}>
                 <Search className="h-4 w-4 mr-1" />
                 {loading ? 'Đang kiểm tra...' : 'Kiểm tra vé'}
               </Button>
             </div>
+
             {loading && (
               <div className="space-y-2 pt-2">
                 <Skeleton className="h-16 w-full" />
@@ -218,7 +236,6 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
           </div>
         )}
 
-        {/* STAGE: segments */}
         {stage === 'segments' && preData && (
           <div className="space-y-3 py-3">
             <div className="flex items-center justify-between">
@@ -231,6 +248,7 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
                   ({preData.seg.length} segment)
                 </span>
               </div>
+
               <span
                 className={[
                   'text-xs px-2 py-1 rounded',
@@ -249,18 +267,15 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
               onToggle={toggleSegment}
             />
 
-            {ctx?.isRoundTrip && segDelete.length > 0 && segDelete.length < 2 && (
-              <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                <AlertTriangle className="h-4 w-4" />
-                Vé khứ hồi cần xoá tối thiểu 2 segment
-              </div>
-            )}
-
             <div className="flex justify-between gap-2 pt-2 border-t">
               <Button variant="outline" onClick={handleClose} disabled={loading}>
                 Đóng
               </Button>
-              <Button onClick={onPriceCheck} disabled={loading || segDelete.length === 0}>
+
+              <Button
+                onClick={onPriceCheck}
+                disabled={loading || segDelete.length === 0}
+              >
                 <RefreshCw className="h-4 w-4 mr-1" />
                 {loading ? 'Đang xử lý...' : 'Check giá đổi'}
               </Button>
@@ -268,13 +283,11 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
           </div>
         )}
 
-        {/* STAGE: result */}
         {stage === 'result' && result && (
           <div className="space-y-3 py-3 relative">
             <button
               type="button"
               onClick={captureToClipboard}
-              title="Chụp ảnh kết quả"
               className="absolute -top-1 right-0 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-md border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 shadow-sm text-xs"
             >
               <Camera className="h-3.5 w-3.5" />
@@ -282,32 +295,40 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
             </button>
 
             <div ref={captureRef} className="space-y-3 bg-white p-1">
+
+              {/* CHỖ ĐÃ FIX: chỉ text nhích -3px */}
               <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2 text-sm">
                 <CheckCircle2 className="h-4 w-4" />
-                {result.status === 'success' ? (
-                  <>
-                    PNR <strong>{pnr}</strong> với hành trình mới.
-                  </>
-                ) : (
-                  result.message || 'Kết quả đổi vé'
-                )}
+
+                <span className="inline-block -translate-y-[8px]">
+                  {result.status === 'success' ? (
+                    <>
+                      PNR <strong>{pnr}</strong> với hành trình mới.
+                    </>
+                  ) : (
+                    result.message || 'Kết quả đổi vé'
+                  )}
+                </span>
               </div>
 
               {Array.isArray(result.namelist) && result.namelist.length > 0 && (
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                   <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-2">
                     <Users className="h-3.5 w-3.5" />
+                    <span className="inline-block -translate-y-[8px]">
                     Danh sách hành khách ({result.namelist.length})
+                    </span>
                   </div>
+
                   <ul className="space-y-1">
                     {result.namelist.map((name, idx) => (
                       <li
                         key={idx}
                         className="text-sm font-mono text-gray-800 bg-white rounded px-2 py-1 border border-gray-100"
                       >
-                        <strong>
-                          {typeof name === 'string' ? name.trim() : String(name)}
-                        </strong>
+                        <span className="inline-block -translate-y-[8px]">
+                        <strong>{typeof name === 'string' ? name.trim() : String(name)}</strong>
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -317,8 +338,11 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
               {Array.isArray(result.seg_new) && result.seg_new.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold text-gray-700 mb-2">
+                    <span className="inline-block -translate-y-[8px]">
                     Hành trình mới
+                    </span>
                   </div>
+
                   <SegmentList
                     segments={result.seg_new}
                     selected={[]}
@@ -332,35 +356,12 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
               {result.new_price && <PriceSummary price={result.new_price} />}
             </div>
 
-            {result.search_command && (
-              <Collapsible>
-                <CollapsibleTrigger className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800">
-                  <ChevronDown className="h-3 w-3" /> Debug command
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="mt-2 rounded border bg-gray-50 p-2 flex items-start gap-2">
-                    <pre className="flex-1 text-[11px] text-gray-700 whitespace-pre-wrap break-all">
-                      {result.search_command}
-                    </pre>
-                    <button
-                      type="button"
-                      onClick={() => copyCommand(result.search_command!)}
-                      className="shrink-0 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      <Copy className="h-3 w-3" /> Copy
-                    </button>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-
             <div className="flex justify-end gap-2 pt-2 border-t">
               <Button onClick={handleClose}>Đóng</Button>
             </div>
           </div>
         )}
 
-        {/* Confirm dialog */}
         {confirmOpen && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-lg shadow-xl p-5 w-[90vw] max-w-sm">
@@ -368,9 +369,11 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
                 <CheckCircle2 className="h-5 w-5" />
                 <h3 className="font-semibold">Check giá đổi vé</h3>
               </div>
+
               <p className="text-sm text-gray-600">
                 Thay {segDelete.length} hành trình cũ sang hành trình mới và check giá đổi?
               </p>
+
               <div className="flex justify-end gap-2 mt-4">
                 <Button variant="outline" onClick={() => setConfirmOpen(false)}>
                   Hủy
@@ -385,4 +388,4 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
       </DialogContent>
     </Dialog>
   );
-};
+}
