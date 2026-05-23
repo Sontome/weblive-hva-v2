@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import {
   ChevronDown,
   CheckCircle2,
   AlertTriangle,
+  Camera,
+  Users,
 } from 'lucide-react';
 import { useChangeTicket } from '@/hooks/useChangeTicket';
 import { SegmentList } from './SegmentList';
@@ -81,6 +83,7 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const ctx = useMemo(() => buildContext(flight), [flight]);
+  const captureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -97,6 +100,42 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
       toast.success('Đã copy command');
     } catch {
       toast.error('Không thể copy');
+    }
+  };
+
+  const captureToClipboard = async () => {
+    if (!captureRef.current) return;
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(captureRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          toast.error('Không thể tạo ảnh');
+          return;
+        }
+        try {
+          // @ts-ignore
+          await navigator.clipboard.write([
+            // @ts-ignore
+            new ClipboardItem({ 'image/png': blob }),
+          ]);
+          toast.success('Đã copy ảnh vào clipboard');
+        } catch {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `doi-ve-${pnr || 'vna'}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast.success('Đã tải ảnh xuống');
+        }
+      }, 'image/png');
+    } catch {
+      toast.error('Lỗi chụp ảnh');
     }
   };
 
@@ -231,34 +270,65 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
 
         {/* STAGE: result */}
         {stage === 'result' && result && (
-          <div className="space-y-3 py-3">
-            <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2 text-sm">
-              <CheckCircle2 className="h-4 w-4" />
-              {result.status === 'success'
-                ? (
-                    <>
-                      PNR <strong>{pnr}</strong> với hành trình mới.
-                    </>
-                  )
-                : result.message || 'Kết quả đổi vé'}
-            </div>
+          <div className="space-y-3 py-3 relative">
+            <button
+              type="button"
+              onClick={captureToClipboard}
+              title="Chụp ảnh kết quả"
+              className="absolute -top-1 right-0 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-md border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 shadow-sm text-xs"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              Chụp ảnh
+            </button>
 
-            {result.seg_new && result.seg_new.length > 0 && (
-              <div>
-                <div className="text-sm font-semibold text-gray-700 mb-2">
-                  Hành trình mới
-                </div>
-                <SegmentList
-                  segments={result.seg_new}
-                  selected={[]}
-                  onToggle={() => {}}
-                  readOnly
-                  highlightHolding
-                />
+            <div ref={captureRef} className="space-y-3 bg-white p-1">
+              <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2 text-sm">
+                <CheckCircle2 className="h-4 w-4" />
+                {result.status === 'success' ? (
+                  <>
+                    PNR <strong>{pnr}</strong> với hành trình mới.
+                  </>
+                ) : (
+                  result.message || 'Kết quả đổi vé'
+                )}
               </div>
-            )}
 
-            <PriceSummary price={result.new_price} />
+              {Array.isArray(result.namelist) && result.namelist.length > 0 && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-2">
+                    <Users className="h-3.5 w-3.5" />
+                    Danh sách hành khách ({result.namelist.length})
+                  </div>
+                  <ul className="space-y-1">
+                    {result.namelist.map((name, idx) => (
+                      <li
+                        key={idx}
+                        className="text-sm font-mono text-gray-800 bg-white rounded px-2 py-1 border border-gray-100"
+                      >
+                        {typeof name === 'string' ? name.trim() : String(name)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {Array.isArray(result.seg_new) && result.seg_new.length > 0 && (
+                <div>
+                  <div className="text-sm font-semibold text-gray-700 mb-2">
+                    Hành trình mới
+                  </div>
+                  <SegmentList
+                    segments={result.seg_new}
+                    selected={[]}
+                    onToggle={() => {}}
+                    readOnly
+                    highlightHolding
+                  />
+                </div>
+              )}
+
+              {result.new_price && <PriceSummary price={result.new_price} />}
+            </div>
 
             {result.search_command && (
               <Collapsible>
