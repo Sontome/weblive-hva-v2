@@ -41,8 +41,10 @@ export interface ChangePnrRequest {
   arr: string;
   depdate: string;
   deptime: string;
+  deptimedone: string;
   arrdate?: string;
   arrtime?: string;
+  arrtimedone?: string;
 }
 
 export interface FlightContext {
