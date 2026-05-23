@@ -52,7 +52,9 @@ export interface FlightContext {
   arr: string;
   depdate: string;
   deptime: string;
+  deptimedone: string;
   arrdate?: string;
   arrtime?: string;
+  arrtimedone?: string;
   isRoundTrip: boolean;
 }
