@@ -305,7 +305,9 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
                         key={idx}
                         className="text-sm font-mono text-gray-800 bg-white rounded px-2 py-1 border border-gray-100"
                       >
-                        {typeof name === 'string' ? name.trim() : String(name)}
+                        <strong>
+                          {typeof name === 'string' ? name.trim() : String(name)}
+                        </strong>
                       </li>
                     ))}
                   </ul>
