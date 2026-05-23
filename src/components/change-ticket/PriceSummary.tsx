@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { ChangePrice } from '@/types/changeTicket';
 import { formatCurrencyKRW } from './utils';
 import { Input } from '@/components/ui/input';
@@ -8,37 +8,72 @@ export const PriceSummary: React.FC<{
   price?: ChangePrice;
 }> = ({ price }) => {
 
-  const [editing, setEditing] =
-    useState(false);
+  const [editingField, setEditingField] =
+    useState<'penalty' | 'grd' | null>(null);
 
-  const [value, setValue] =
-    useState('');
-
-  const [displayValue, setDisplayValue] =
+  const [penalty, setPenalty] =
     useState<number>(0);
+
+  const [grd, setGrd] =
+    useState<number>(0);
+
+  const [tempValue, setTempValue] =
+    useState('');
 
   useEffect(() => {
 
-    if (price?.total_new != null) {
+    if (!price) return;
 
-      setDisplayValue(price.total_new);
+    setPenalty(price.penalty_total || 0);
 
-      setValue(String(price.total_new));
-    }
+    setGrd(price.GRD_TOTAL || 0);
 
   }, [price]);
 
+  const total = useMemo(() => {
+    return penalty + grd;
+  }, [penalty, grd]);
+
   if (!price) return null;
 
-  const handleSave = () => {
+  const startEdit = (
+    field: 'penalty' | 'grd'
+  ) => {
 
-    const parsed = Number(value);
+    setEditingField(field);
+
+    setTempValue(
+      String(
+        field === 'penalty'
+          ? penalty
+          : grd
+      )
+    );
+  };
+
+  const saveEdit = () => {
+
+    const parsed = Number(tempValue);
 
     if (!isNaN(parsed)) {
-      setDisplayValue(parsed);
+
+      if (editingField === 'penalty') {
+        setPenalty(parsed);
+      }
+
+      if (editingField === 'grd') {
+        setGrd(parsed);
+      }
     }
 
-    setEditing(false);
+    setEditingField(null);
+  };
+
+  const cancelEdit = () => {
+
+    setEditingField(null);
+
+    setTempValue('');
   };
 
   return (
@@ -50,51 +85,22 @@ export const PriceSummary: React.FC<{
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
 
+        {/* PHÍ PHẠT */}
         <div className="rounded-lg bg-white/70 p-2">
-          <div className="text-xs text-gray-500">
+
+          <div className="text-xs text-gray-500 mb-1">
             Phí phạt
           </div>
 
-          <div className="font-semibold text-gray-800">
-            {formatCurrencyKRW(price.penalty_total)}
-          </div>
-        </div>
+          {editingField === 'penalty' ? (
 
-        <div className="rounded-lg bg-white/70 p-2">
-          <div className="text-xs text-gray-500">
-            Phí chênh lệch
-          </div>
-
-          <div className="font-semibold text-gray-800">
-            {formatCurrencyKRW(price.GRD_TOTAL)}
-          </div>
-        </div>
-
-        <div className="rounded-lg bg-emerald-100 p-2">
-
-          <div className="text-xs text-emerald-700">
-            Tổng phí đổi
-          </div>
-
-          {!editing ? (
-
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="font-bold text-emerald-800 hover:underline"
-            >
-              {formatCurrencyKRW(displayValue)}
-            </button>
-
-          ) : (
-
-            <div className="space-y-2 mt-1">
+            <div className="space-y-2">
 
               <Input
                 type="number"
-                value={value}
+                value={tempValue}
                 onChange={(e) =>
-                  setValue(e.target.value)
+                  setTempValue(e.target.value)
                 }
               />
 
@@ -102,7 +108,7 @@ export const PriceSummary: React.FC<{
 
                 <Button
                   size="sm"
-                  onClick={handleSave}
+                  onClick={saveEdit}
                 >
                   OK
                 </Button>
@@ -110,19 +116,94 @@ export const PriceSummary: React.FC<{
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    setEditing(false);
-                    setValue(
-                      String(displayValue)
-                    );
-                  }}
+                  onClick={cancelEdit}
                 >
                   Cancel
                 </Button>
 
               </div>
             </div>
+
+          ) : (
+
+            <button
+              type="button"
+              onClick={() =>
+                startEdit('penalty')
+              }
+              className="font-semibold text-gray-800 hover:underline"
+            >
+              {formatCurrencyKRW(penalty)}
+            </button>
+
           )}
+        </div>
+
+        {/* PHÍ CHÊNH LỆCH */}
+        <div className="rounded-lg bg-white/70 p-2">
+
+          <div className="text-xs text-gray-500 mb-1">
+            Phí chênh lệch
+          </div>
+
+          {editingField === 'grd' ? (
+
+            <div className="space-y-2">
+
+              <Input
+                type="number"
+                value={tempValue}
+                onChange={(e) =>
+                  setTempValue(e.target.value)
+                }
+              />
+
+              <div className="flex gap-2">
+
+                <Button
+                  size="sm"
+                  onClick={saveEdit}
+                >
+                  OK
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={cancelEdit}
+                >
+                  Cancel
+                </Button>
+
+              </div>
+            </div>
+
+          ) : (
+
+            <button
+              type="button"
+              onClick={() =>
+                startEdit('grd')
+              }
+              className="font-semibold text-gray-800 hover:underline"
+            >
+              {formatCurrencyKRW(grd)}
+            </button>
+
+          )}
+        </div>
+
+        {/* TOTAL */}
+        <div className="rounded-lg bg-emerald-100 p-2">
+
+          <div className="text-xs text-emerald-700">
+            Tổng phí đổi
+          </div>
+
+          <div className="font-bold text-emerald-800">
+            {formatCurrencyKRW(total)}
+          </div>
+
         </div>
       </div>
     </div>
