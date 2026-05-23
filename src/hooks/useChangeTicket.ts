@@ -75,8 +75,10 @@ export function useChangeTicket() {
           arr: ctx.arr,
           depdate: ctx.depdate,
           deptime: ctx.deptime,
+          deptimedone: ctx.deptime,
           ...(ctx.arrdate ? { arrdate: ctx.arrdate } : {}),
           ...(ctx.arrtime ? { arrtime: ctx.arrtime } : {}),
+          ...(ctx.arrtimedone ? { arrtimedone: ctx.arrtimedone } : {}),
         });
         if (data?.status && data.status !== 'success') {
           toast.error(data.message || 'Đổi vé không thành công');
