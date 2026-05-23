@@ -310,6 +310,19 @@ export const ChangeTicketModal: React.FC<Props> = ({
                   )}
                 </span>
               </div>
+              <div className="flex items-center gap-2 text-red-700 bg-emerald-50 border border-emerald-200 rounded p-2 text-sm">
+                
+
+                <span className="inline-block -translate-y-[8px]">
+                  {result.status === 'success' ? (
+                    <>
+                      **Phí đổi ở thời điểm hiện tại, liên hệ admin để thực hiện xác nhận phí và lưu hành trình**
+                    </>
+                  ) : (
+                    result.message || 'Kết quả đổi vé'
+                  )}
+                </span>
+              </div>
 
               {Array.isArray(result.namelist) && result.namelist.length > 0 && (
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
