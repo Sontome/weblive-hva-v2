@@ -29,6 +29,7 @@ interface VNALeg {
   nơi_đến?: string;
   ngày_cất_cánh?: string;
   giờ_cất_cánh?: string;
+  giờ_hạ_cánh?: string;
 }
 
 interface FlightLike {
@@ -47,7 +48,7 @@ function buildContext(flight: FlightLike | null): FlightContext | null {
   if (!flight) return null;
   const out = flight.chiều_đi;
   const back = flight.chiều_về;
-  if (!out?.nơi_đi || !out?.nơi_đến || !out?.ngày_cất_cánh || !out?.giờ_cất_cánh) {
+  if (!out?.nơi_đi || !out?.nơi_đến || !out?.ngày_cất_cánh || !out?.giờ_cất_cánh|| !out?.giờ_hạ_cánh) {
     return null;
   }
   return {
@@ -55,8 +56,10 @@ function buildContext(flight: FlightLike | null): FlightContext | null {
     arr: out.nơi_đến,
     depdate: formatDateToApi(out.ngày_cất_cánh),
     deptime: formatTimeToApi(out.giờ_cất_cánh),
+    deptimedone: formatTimeToApi(out.giờ_hạ_cánh),
     arrdate: back?.ngày_cất_cánh ? formatDateToApi(back.ngày_cất_cánh) : undefined,
     arrtime: back?.giờ_cất_cánh ? formatTimeToApi(back.giờ_cất_cánh) : undefined,
+    arrtimedone: back?.giờ_hạ_cánh ? formatTimeToApi(back.giờ_hạ_cánh) : undefined,
     isRoundTrip: Boolean(back?.ngày_cất_cánh && back?.giờ_cất_cánh),
   };
 }
