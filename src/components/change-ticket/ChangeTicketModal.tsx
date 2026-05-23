@@ -289,11 +289,11 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-lg shadow-xl p-5 w-[90vw] max-w-sm">
               <div className="flex items-center gap-2 text-amber-600 mb-2">
-                <AlertTriangle className="h-5 w-5" />
-                <h3 className="font-semibold">Xác nhận đổi vé</h3>
+                <CheckCircle2 className="h-5 w-5" />
+                <h3 className="font-semibold">Check giá đổi vé</h3>
               </div>
               <p className="text-sm text-gray-600">
-                Bạn chắc chắn muốn xoá {segDelete.length} segment và check giá đổi?
+                Thay {segDelete.length} hành trình cũ sang hành trình mới và check giá đổi?
               </p>
               <div className="flex justify-end gap-2 mt-4">
                 <Button variant="outline" onClick={() => setConfirmOpen(false)}>
