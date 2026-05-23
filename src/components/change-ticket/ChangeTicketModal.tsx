@@ -235,7 +235,11 @@ export const ChangeTicketModal: React.FC<Props> = ({ isOpen, onClose, flight }) 
             <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2 text-sm">
               <CheckCircle2 className="h-4 w-4" />
               {result.status === 'success'
-                ? 'Đổi vé thành công — hành trình mới đã được giữ chỗ.'
+                ? (
+                    <>
+                      PNR <strong>{pnr}</strong> với hành trình mới.
+                    </>
+                  )
                 : result.message || 'Kết quả đổi vé'}
             </div>
 
