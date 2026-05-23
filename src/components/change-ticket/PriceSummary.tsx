@@ -24,9 +24,9 @@ export const PriceSummary: React.FC<{
 
     if (!price) return;
 
-    setPenalty(price.penalty_total || 0);
+    setPenalty(Number(price.penalty_total) || 0);
 
-    setGrd(price.GRD_TOTAL || 0);
+    setGrd(Number(price.GRD_TOTAL) || 0);
 
   }, [price]);
 
