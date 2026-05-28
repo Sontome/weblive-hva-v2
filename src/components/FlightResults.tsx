@@ -7,7 +7,8 @@ import { OtherAirlinesModal } from './OtherAirlinesModal';
 import { Button } from './ui/button';
 import { useRouteDiscounts } from '@/hooks/useRouteDiscounts';
 import { ChangeTicketModal } from './change-ticket/ChangeTicketModal';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, GraduationCap } from 'lucide-react';
+import { CheckSTUVNAModal } from './CheckSTUVNAModal';
 
 interface FlightLeg {
   hãng: string;
@@ -70,6 +71,8 @@ interface FlightResultsProps {
   selectedFlightType: 'all' | 'direct' | 'connecting';
   searchData?: {
     tripType: 'OW' | 'RT';
+    adults: number;
+    children: number;
     oneWayFee: number;
     roundTripFeeVietjet: number;
     roundTripFeeVNA: number;
@@ -167,6 +170,9 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   const { getDiscount: getRouteDiscount } = useRouteDiscounts();
   const [changeTicketOpen, setChangeTicketOpen] = useState(false);
   const [changeTicketFlight, setChangeTicketFlight] = useState<FlightResult | null>(null);
+  const [stuModalOpen, setStuModalOpen] = useState(false);
+  const [stuFlight, setStuFlight] = useState<FlightResult | null>(null);
+  const [studentPriceMap, setStudentPriceMap] = useState<Map<FlightResult, number>>(new Map());
 
   const toggleDetails = (index: number) => {
     setExpandedDetails(prev => ({
@@ -424,7 +430,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     return null;
   };
 
-  const generateCopyTemplate = (result: FlightResult) => {
+  const generateCopyTemplate = (result: FlightResult, priceOverride?: number) => {
     const outbound = result['chiều đi'] || result['chiều_đi'];
     const inbound = result['chiều về'] || result['chiều_về'];
     
@@ -433,7 +439,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     const isVNA = outbound.hãng === 'VNA';
     const isVJ = outbound.hãng === 'VJ';
     const hang = outbound.hãng
-    const finalPrice = calculateFinalPrice(result['thông_tin_chung'].giá_vé, result);
+    const finalPrice = priceOverride ?? calculateFinalPrice(result['thông_tin_chung'].giá_vé, result);
     const baggageType = result['thông_tin_chung'].hành_lý_vna;
     
     const lines: string[] = [];
@@ -550,8 +556,10 @@ const FlightResults: React.FC<FlightResultsProps> = ({
         : vjFreeIn
           ? 'Free 20kg chiều về'
           : '';
-    const finalPrice = calculateFinalPrice(result['thông_tin_chung'].giá_vé, result);
-    const copyTemplate = generateCopyTemplate(result);
+    const studentOverride = studentPriceMap.get(result);
+    const baseFinalPrice = calculateFinalPrice(result['thông_tin_chung'].giá_vé, result);
+    const finalPrice = studentOverride ?? baseFinalPrice;
+    const copyTemplate = generateCopyTemplate(result, finalPrice);
     const ticketClassSummary = getTicketClassSummary(result);
     const flightTypeLabel = getFlightTypeLabel(result);
     const isDirect = isDirectFlight(result);
@@ -583,17 +591,30 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           </div>
         )}
         {isVNA && (
-          <button
-            onClick={() => {
-              setChangeTicketFlight(result);
-              setChangeTicketOpen(true);
-            }}
-            title="Đổi vé"
-            aria-label="Đổi vé"
-            className="absolute top-1 right-1 z-10 inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-md border border-amber-300 transition-colors"
-          >
-            <RefreshCw className="h-3 w-3" />
-          </button>
+          <div className="absolute top-1 right-1 z-10 flex items-center gap-1">
+            <button
+              onClick={() => {
+                setStuFlight(result);
+                setStuModalOpen(true);
+              }}
+              title="Check giá học sinh"
+              aria-label="Check giá học sinh"
+              className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white shadow-md border border-indigo-300 transition-colors"
+            >
+              <GraduationCap className="h-3 w-3" />
+            </button>
+            <button
+              onClick={() => {
+                setChangeTicketFlight(result);
+                setChangeTicketOpen(true);
+              }}
+              title="Đổi vé"
+              aria-label="Đổi vé"
+              className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-md border border-amber-300 transition-colors"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </button>
+          </div>
         )}
         <div className="p-2">
           {/* Flight Info Section - More compact */}
@@ -611,6 +632,11 @@ const FlightResults: React.FC<FlightResultsProps> = ({
                 <div className="text-base font-bold text-gray-800">
                   {formatPriceForDisplay(finalPrice)} KRW
                 </div>
+                {studentOverride != null && (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200">
+                    Giá HS
+                  </span>
+                )}
               </div>
             </div>
             <div className="text-xs text-gray-600 font-medium leading-tight">
@@ -1110,6 +1136,25 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           }}
           flight={changeTicketFlight as unknown as { chiều_đi?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string }; chiều_về?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string } } | null}
         />
+
+        <CheckSTUVNAModal
+          isOpen={stuModalOpen}
+          onClose={() => {
+            setStuModalOpen(false);
+            setStuFlight(null);
+          }}
+          flight={stuFlight as any}
+          passengerCount={(searchData?.adults || 0) + (searchData?.children || 0) || 1}
+          currentPrice={stuFlight ? calculateFinalPrice(stuFlight['thông_tin_chung'].giá_vé, stuFlight) : 0}
+          onApply={(newPrice) => {
+            if (!stuFlight) return;
+            setStudentPriceMap(prev => {
+              const next = new Map(prev);
+              next.set(stuFlight, newPrice);
+              return next;
+            });
+          }}
+        />
       </div>
     );
   }
@@ -1215,6 +1260,25 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           setChangeTicketFlight(null);
         }}
         flight={changeTicketFlight as unknown as { chiều_đi?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string }; chiều_về?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string } } | null}
+      />
+
+      <CheckSTUVNAModal
+        isOpen={stuModalOpen}
+        onClose={() => {
+          setStuModalOpen(false);
+          setStuFlight(null);
+        }}
+        flight={stuFlight as any}
+        passengerCount={(searchData?.adults || 0) + (searchData?.children || 0) || 1}
+        currentPrice={stuFlight ? calculateFinalPrice(stuFlight['thông_tin_chung'].giá_vé, stuFlight) : 0}
+        onApply={(newPrice) => {
+          if (!stuFlight) return;
+          setStudentPriceMap(prev => {
+            const next = new Map(prev);
+            next.set(stuFlight, newPrice);
+            return next;
+          });
+        }}
       />
     </div>
   );
