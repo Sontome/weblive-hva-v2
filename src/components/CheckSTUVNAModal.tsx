@@ -30,6 +30,12 @@ interface Props {
   passengerCount: number;
   currentPrice: number;
   onApply: (newPrice: number) => void;
+  /**
+   * Optional transform applied to the raw API price (e.g. add VNA fees,
+   * subtract tier discount, subtract route discount). When provided, the
+   * displayed and applied price uses the transformed value.
+   */
+  transformPrice?: (rawPrice: number) => number;
 }
 
 function buildRequest(
@@ -79,17 +85,18 @@ export const CheckSTUVNAModal: React.FC<Props> = ({
   passengerCount,
   currentPrice,
   onApply,
+  transformPrice,
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [newPrice, setNewPrice] = useState<number | null>(null);
+  const [rawPrice, setRawPrice] = useState<number | null>(null);
   const [mess, setMess] = useState<string>('');
 
   useEffect(() => {
     if (!isOpen) {
       setLoading(false);
       setError(null);
-      setNewPrice(null);
+      setRawPrice(null);
       setMess('');
       return;
     }
@@ -103,7 +110,7 @@ export const CheckSTUVNAModal: React.FC<Props> = ({
     let cancelled = false;
     setLoading(true);
     setError(null);
-    setNewPrice(null);
+    setRawPrice(null);
 
     checkStudentPrice(req)
       .then((res) => {
@@ -111,7 +118,7 @@ export const CheckSTUVNAModal: React.FC<Props> = ({
         const p = res?.price?.price;
         setMess(res?.mess || '');
         if (typeof p === 'number' && p > 0) {
-          setNewPrice(p);
+          setRawPrice(p);
         } else {
           setError(res?.mess || 'API không trả về giá hợp lệ.');
         }
@@ -129,9 +136,16 @@ export const CheckSTUVNAModal: React.FC<Props> = ({
     };
   }, [isOpen, flight, passengerCount]);
 
+  const finalPrice =
+    rawPrice == null
+      ? null
+      : transformPrice
+      ? transformPrice(rawPrice)
+      : rawPrice;
+
   const handleApply = () => {
-    if (newPrice == null) return;
-    onApply(newPrice);
+    if (finalPrice == null) return;
+    onApply(finalPrice);
     toast.success('Đã cập nhật giá vé học sinh');
     onClose();
   };
@@ -169,7 +183,7 @@ export const CheckSTUVNAModal: React.FC<Props> = ({
             </div>
           )}
 
-          {!loading && !error && newPrice != null && (
+          {!loading && !error && finalPrice != null && (
             <>
               <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2 text-sm">
                 <CheckCircle2 className="h-4 w-4" />
@@ -183,10 +197,18 @@ export const CheckSTUVNAModal: React.FC<Props> = ({
                     {formatKRW(currentPrice)}
                   </span>
                 </div>
+                {transformPrice && rawPrice != null && (
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>Giá gốc HS (API):</span>
+                    <span className="font-mono">{formatKRW(rawPrice)}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700 font-medium">Giá học sinh:</span>
+                  <span className="text-gray-700 font-medium">
+                    Giá học sinh (đã áp config):
+                  </span>
                   <span className="font-mono text-indigo-700 font-bold text-base">
-                    {formatKRW(newPrice)}
+                    {formatKRW(finalPrice)}
                   </span>
                 </div>
               </div>
@@ -199,7 +221,7 @@ export const CheckSTUVNAModal: React.FC<Props> = ({
             <X className="h-4 w-4 mr-1" />
             Đóng
           </Button>
-          {!loading && !error && newPrice != null && (
+          {!loading && !error && finalPrice != null && (
             <Button onClick={handleApply}>
               <CheckCircle2 className="h-4 w-4 mr-1" />
               Áp dụng giá mới
