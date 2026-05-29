@@ -1146,6 +1146,17 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           flight={stuFlight as any}
           passengerCount={(searchData?.adults || 0) + (searchData?.children || 0) || 1}
           currentPrice={stuFlight ? calculateFinalPrice(stuFlight['thông_tin_chung'].giá_vé, stuFlight) : 0}
+          transformPrice={(raw) => {
+            if (!stuFlight) return raw;
+            const cloned: FlightResult = {
+              ...stuFlight,
+              thông_tin_chung: {
+                ...stuFlight['thông_tin_chung'],
+                giá_vé: String(raw),
+              },
+            };
+            return calculateFinalPrice(String(raw), cloned);
+          }}
           onApply={(newPrice) => {
             if (!stuFlight) return;
             setStudentPriceMap(prev => {
@@ -1271,6 +1282,17 @@ const FlightResults: React.FC<FlightResultsProps> = ({
         flight={stuFlight as any}
         passengerCount={(searchData?.adults || 0) + (searchData?.children || 0) || 1}
         currentPrice={stuFlight ? calculateFinalPrice(stuFlight['thông_tin_chung'].giá_vé, stuFlight) : 0}
+        transformPrice={(raw) => {
+          if (!stuFlight) return raw;
+          const cloned: FlightResult = {
+            ...stuFlight,
+            thông_tin_chung: {
+              ...stuFlight['thông_tin_chung'],
+              giá_vé: String(raw),
+            },
+          };
+          return calculateFinalPrice(String(raw), cloned);
+        }}
         onApply={(newPrice) => {
           if (!stuFlight) return;
           setStudentPriceMap(prev => {
