@@ -430,7 +430,11 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     return null;
   };
 
-  const generateCopyTemplate = (result: FlightResult, priceOverride?: number) => {
+  const generateCopyTemplate = (
+    result: FlightResult,
+    priceOverride?: number,
+    studentOverride?: number
+  ) => {
     const outbound = result['chiều đi'] || result['chiều_đi'];
     const inbound = result['chiều về'] || result['chiều_về'];
     
@@ -479,11 +483,22 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     
     // Airline specific baggage info
     if (isVNA && (baggageType === 'VFR' || baggageType === 'ADT')) {
+      const isStudent = studentOverride != null;
+    
       if (baggageType === 'ADT') {
-        lines.push(`VNairlines 10kg xách tay, 23kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`);
+        lines.push(
+          isStudent
+            ? `VNairlines DHS 10kg xách tay, 23kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
+            : `VNairlines 10kg xách tay, 23kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
+        );
       } else {
-        lines.push(`VNairlines 10kg xách tay, 46kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`);
+        lines.push(
+          isStudent
+            ? `VNairlines DHS 10kg xách tay, 46kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
+            : `VNairlines 10kg xách tay, 46kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
+        );
       }
+    
     } else if (isVJ) {
       lines.push(`Vietjet 7kg xách tay, 20kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`);
     } else {
@@ -559,7 +574,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     const studentOverride = studentPriceMap.get(result);
     const baseFinalPrice = calculateFinalPrice(result['thông_tin_chung'].giá_vé, result);
     const finalPrice = studentOverride ?? baseFinalPrice;
-    const copyTemplate = generateCopyTemplate(result, finalPrice);
+    const copyTemplate = generateCopyTemplate(result, finalPrice, studentOverride);
     const ticketClassSummary = getTicketClassSummary(result);
     const flightTypeLabel = getFlightTypeLabel(result);
     const isDirect = isDirectFlight(result);
