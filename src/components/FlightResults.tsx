@@ -9,6 +9,7 @@ import { useRouteDiscounts } from '@/hooks/useRouteDiscounts';
 import { ChangeTicketModal } from './change-ticket/ChangeTicketModal';
 import { RefreshCw, GraduationCap } from 'lucide-react';
 import { CheckSTUVNAModal } from './CheckSTUVNAModal';
+import { ChangeTicketVJModal } from './change-ticket-vj/ChangeTicketVJModal';
 
 interface FlightLeg {
   hãng: string;
@@ -170,6 +171,8 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   const { getDiscount: getRouteDiscount } = useRouteDiscounts();
   const [changeTicketOpen, setChangeTicketOpen] = useState(false);
   const [changeTicketFlight, setChangeTicketFlight] = useState<FlightResult | null>(null);
+  const [changeVJOpen, setChangeVJOpen] = useState(false);
+  const [changeVJFlight, setChangeVJFlight] = useState<FlightResult | null>(null);
   const [stuModalOpen, setStuModalOpen] = useState(false);
   const [stuFlight, setStuFlight] = useState<FlightResult | null>(null);
   const [studentPriceMap, setStudentPriceMap] = useState<Map<FlightResult, number>>(new Map());
@@ -626,6 +629,21 @@ const FlightResults: React.FC<FlightResultsProps> = ({
               title="Đổi vé"
               aria-label="Đổi vé"
               className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-md border border-amber-300 transition-colors"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+        {isVJ && (
+          <div className={`absolute top-1 ${freebagLabel ? 'left-1' : 'right-1'} z-10 flex items-center gap-1`}>
+            <button
+              onClick={() => {
+                setChangeVJFlight(result);
+                setChangeVJOpen(true);
+              }}
+              title="Đổi vé"
+              aria-label="Đổi vé"
+              className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-rose-500 hover:bg-rose-600 text-white shadow-md border border-rose-300 transition-colors"
             >
               <RefreshCw className="h-3 w-3" />
             </button>
@@ -1181,6 +1199,15 @@ const FlightResults: React.FC<FlightResultsProps> = ({
             });
           }}
         />
+
+        <ChangeTicketVJModal
+          isOpen={changeVJOpen}
+          onClose={() => {
+            setChangeVJOpen(false);
+            setChangeVJFlight(null);
+          }}
+          flight={changeVJFlight as unknown as { chiều_đi?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; id?: string }; chiều_về?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; id?: string } } | null}
+        />
       </div>
     );
   }
@@ -1316,6 +1343,15 @@ const FlightResults: React.FC<FlightResultsProps> = ({
             return next;
           });
         }}
+      />
+
+      <ChangeTicketVJModal
+        isOpen={changeVJOpen}
+        onClose={() => {
+          setChangeVJOpen(false);
+          setChangeVJFlight(null);
+        }}
+        flight={changeVJFlight as unknown as { chiều_đi?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; id?: string }; chiều_về?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; id?: string } } | null}
       />
     </div>
   );
