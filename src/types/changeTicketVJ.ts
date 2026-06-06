@@ -11,6 +11,13 @@ export interface VJTrip {
 export interface PreChangeVJResponse {
   trips?: VJTrip[];
   pnr?: string;
+  passengers?: VJPassenger[];
+  [k: string]: unknown;
+}
+
+export interface VJPassenger {
+  full_name?: string;
+  type?: string;
   [k: string]: unknown;
 }
 
