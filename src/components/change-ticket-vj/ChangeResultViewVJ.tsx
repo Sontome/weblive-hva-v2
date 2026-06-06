@@ -24,26 +24,28 @@ const TripCard: React.FC<{ trip: VJTrip; tone: 'old' | 'new' }> = ({
         <Plane
           className={`h-4 w-4 ${tone === 'new' ? 'text-emerald-600' : 'text-gray-500'}`}
         />
-        <span>{trip.flight_no || '—'}</span>
+        <span className="inline-block -translate-y-[8px]">{trip.flight_no || '—'}</span>
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-700">
         <span className="inline-flex items-center gap-1 font-semibold">
           <MapPin className="h-3 w-3 text-blue-500" />
-          {trip.origin}
-          <span className="text-gray-400">→</span>
-          {trip.destination}
+          <span className="inline-block -translate-y-[8px]">{trip.origin}</span>
+          <span className="text-gray-400 inline-block -translate-y-[8px]">→</span>
+          <span className="inline-block -translate-y-[8px]">{trip.destination}</span>
         </span>
         {dep.date && (
           <span className="inline-flex items-center gap-1">
             <Calendar className="h-3 w-3 text-gray-500" />
-            {dep.date}
+            <span className="inline-block -translate-y-[8px]">{dep.date}</span>
           </span>
         )}
         {(dep.time || arr.time) && (
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3 w-3 text-gray-500" />
-            {dep.time}
-            {arr.time ? ` - ${arr.time}` : ''}
+            <span className="inline-block -translate-y-[8px]">
+              {dep.time}
+              {arr.time ? ` - ${arr.time}` : ''}
+            </span>
           </span>
         )}
       </div>
@@ -59,8 +61,8 @@ export const ChangeResultViewVJ: React.FC<{
     <div className="space-y-3">
       {oldTrips.length > 0 && (
         <div>
-          <div className="text-xs font-semibold text-gray-600 mb-1">
-            Hành trình cũ
+          <div className="text-base font-bold text-gray-800 mb-2">
+            <span className="inline-block -translate-y-[8px]">Hành trình cũ</span>
           </div>
           <div className="space-y-2">
             {oldTrips.map((t, i) => (
@@ -76,8 +78,8 @@ export const ChangeResultViewVJ: React.FC<{
       )}
       {newTrips.length > 0 && (
         <div>
-          <div className="text-xs font-semibold text-emerald-700 mb-1">
-            Hành trình mới
+          <div className="text-base font-bold text-emerald-700 mb-2">
+            <span className="inline-block -translate-y-[8px]">Hành trình mới</span>
           </div>
           <div className="space-y-2">
             {newTrips.map((t, i) => (
