@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import {
   X,
   CheckCircle2,
   AlertTriangle,
+  Camera,
+  Users,
 } from 'lucide-react';
 import { useChangeTicketVJ } from '@/hooks/useChangeTicketVJ';
 import { SegmentSelectorVJ } from './SegmentSelectorVJ';
@@ -23,6 +25,7 @@ interface VJLegLike {
   nơi_đến?: string;
   ngày_cất_cánh?: string;
   id?: string;
+  số_hiệu_máy_bay?: string;
   [k: string]: unknown;
 }
 
@@ -50,12 +53,13 @@ function buildVJContext(flight: VJFlightLike | null): VJFlightContext | null {
     dep: out.nơi_đi,
     arr: out.nơi_đến,
     dep_date: formatDateToApi(out.ngày_cất_cánh),
-    new_flight_no: out.số_hiệu_máy_bay,
+    new_flight_no: String(out.số_hiệu_máy_bay ?? ''),
     arr_date:
       isRoundTrip && back?.ngày_cất_cánh
         ? formatDateToApi(back.ngày_cất_cánh)
         : null,
-    new_flight_arr_no: isRoundTrip && back?.số_hiệu_máy_bay ? back.số_hiệu_máy_bay : null,
+    new_flight_arr_no:
+      isRoundTrip && back?.số_hiệu_máy_bay ? String(back.số_hiệu_máy_bay) : null,
     isRoundTrip,
   };
 }
@@ -82,6 +86,7 @@ export const ChangeTicketVJModal: React.FC<Props> = ({
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const ctx = useMemo(() => buildVJContext(flight), [flight]);
+  const captureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -91,6 +96,42 @@ export const ChangeTicketVJModal: React.FC<Props> = ({
   }, [isOpen, reset]);
 
   const handleClose = () => onClose();
+
+  const captureToClipboard = async () => {
+    if (!captureRef.current) return;
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(captureRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      });
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          toast.error('Không thể tạo ảnh');
+          return;
+        }
+        try {
+          // @ts-ignore
+          await navigator.clipboard.write([
+            // @ts-ignore
+            new ClipboardItem({ 'image/png': blob }),
+          ]);
+          toast.success('Đã copy ảnh vào clipboard');
+        } catch {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `doi-ve-vj-${pnr || 'vj'}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast.success('Đã tải ảnh xuống');
+        }
+      }, 'image/png');
+    } catch {
+      toast.error('Lỗi chụp ảnh');
+    }
+  };
 
   const handlePreCheck = async () => {
     if (!ctx) {
@@ -210,6 +251,26 @@ export const ChangeTicketVJModal: React.FC<Props> = ({
               markAll={ctx?.isRoundTrip}
             />
 
+            {Array.isArray(preData.passengers) && preData.passengers.length > 0 && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-2">
+                  <Users className="h-3.5 w-3.5" />
+                  Danh sách hành khách ({preData.passengers.length})
+                </div>
+                <ul className="space-y-1">
+                  {preData.passengers.map((p, i) => (
+                    <li
+                      key={i}
+                      className="text-sm font-mono text-gray-800 bg-white rounded px-2 py-1 border border-gray-100 flex items-center justify-between"
+                    >
+                      <strong>{p.full_name || '—'}</strong>
+                      <span className="text-xs text-gray-500 ml-2">{p.type || ''}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="flex justify-between gap-2 pt-2 border-t">
               <Button variant="outline" onClick={handleClose} disabled={loading}>
                 Đóng
@@ -226,19 +287,55 @@ export const ChangeTicketVJModal: React.FC<Props> = ({
         )}
 
         {stage === 'result' && result && (
-          <div className="space-y-3 py-3">
+          <div className="space-y-3 py-3 relative">
+            <button
+              type="button"
+              onClick={captureToClipboard}
+              className="absolute -top-1 right-0 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-md border border-red-200 bg-white text-red-600 hover:bg-red-50 shadow-sm text-xs"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              Chụp ảnh
+            </button>
+
+            <div ref={captureRef} className="space-y-3 bg-white p-1">
             {result.success === false ? (
               <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded p-2 text-sm">
                 <AlertTriangle className="h-4 w-4" />
-                <span>{result.message || 'Đổi vé không thành công'}</span>
+                <span className="inline-block -translate-y-[8px]">{result.message || 'Đổi vé không thành công'}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2 text-sm">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>
-                  PNR <strong>{result.pnr || pnr}</strong> đã đổi sang hành
-                  trình mới.
-                </span>
+              <>
+                <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span className="inline-block -translate-y-[8px]">
+                    PNR <strong>{result.pnr || pnr}</strong> với hành trình mới.
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-red-700 bg-emerald-50 border border-emerald-200 rounded p-2 text-sm">
+                  <span className="inline-block -translate-y-[8px]">
+                    **Phí đổi vé được check ở thời điểm hiện tại, vui lòng liên hệ admin để xác nhận và lưu phí đổi**
+                  </span>
+                </div>
+              </>
+            )}
+
+            {Array.isArray(preData?.passengers) && preData!.passengers!.length > 0 && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-2">
+                  <Users className="h-3.5 w-3.5" />
+                  <span className="inline-block -translate-y-[8px]">Danh sách hành khách ({preData!.passengers!.length})</span>
+                </div>
+                <ul className="space-y-1">
+                  {preData!.passengers!.map((p, i) => (
+                    <li
+                      key={i}
+                      className="text-sm font-mono text-gray-800 bg-white rounded px-2 py-1 border border-gray-100 flex items-center justify-between"
+                    >
+                      <strong className="inline-block -translate-y-[8px]">{p.full_name || '—'}</strong>
+                      <span className="text-xs text-gray-500 ml-2 inline-block -translate-y-[8px]">{p.type || ''}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 
@@ -248,6 +345,7 @@ export const ChangeTicketVJModal: React.FC<Props> = ({
             />
 
             <ChangeQuotationVJ quotation={result.data?.quotation} />
+            </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t">
               <Button onClick={handleClose}>Đóng</Button>
