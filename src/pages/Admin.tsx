@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogOut, Save, ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RouteDiscountManager from "@/components/admin/RouteDiscountManager";
+import ResourceAdmin from "@/components/admin/ResourceAdmin";
 
 interface PriceConfig {
   id: string;
@@ -376,9 +377,10 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="pricing" className="w-full">
-          <TabsList className="mb-4 grid grid-cols-2 w-full max-w-md">
+          <TabsList className="mb-4 grid grid-cols-3 w-full max-w-2xl">
             <TabsTrigger value="pricing">Cấu hình giá</TabsTrigger>
             <TabsTrigger value="routes">Giảm theo chặng (VNA)</TabsTrigger>
+            <TabsTrigger value="resources">Resources & Check-in</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pricing">
@@ -400,6 +402,10 @@ const Admin = () => {
 
           <TabsContent value="routes">
             <RouteDiscountManager />
+          </TabsContent>
+
+          <TabsContent value="resources">
+            <ResourceAdmin />
           </TabsContent>
         </Tabs>
       </div>
