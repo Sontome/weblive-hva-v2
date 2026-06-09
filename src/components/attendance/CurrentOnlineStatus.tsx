@@ -2,17 +2,16 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface OnlineRow {
+  id: string;
   employee_id: string;
-  started_at: string;
-  employees?: { name: string } | null;
+  resource_id: string;
+  checkin_time: string;
+  employee_name?: string;
+  resource_name?: string;
 }
 
 const formatTime = (iso: string) => {
-  try {
-    return new Date(iso).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return iso;
-  }
+  try { return new Date(iso).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }); } catch { return iso; }
 };
 
 export const CurrentOnlineStatus = ({ refreshKey = 0 }: { refreshKey?: number }) => {
@@ -21,25 +20,25 @@ export const CurrentOnlineStatus = ({ refreshKey = 0 }: { refreshKey?: number })
   const load = async () => {
     try {
       const { data, error } = await (supabase as any)
-        .from('current_online')
-        .select('employee_id, started_at, employees(name)');
+        .from('employee_checkins')
+        .select('id, employee_id, resource_id, checkin_time, employees(name), resources(name)')
+        .eq('status', 'active');
       if (error) throw error;
-      setRows((data as OnlineRow[]) || []);
-    } catch (err) {
-      // Fallback: bảng có thể chưa tồn tại - hiển thị offline
-      setRows([]);
-    }
+      setRows(((data as any[]) || []).map(r => ({
+        id: r.id, employee_id: r.employee_id, resource_id: r.resource_id,
+        checkin_time: r.checkin_time,
+        employee_name: r.employees?.name, resource_name: r.resources?.name,
+      })));
+    } catch (err) { setRows([]); }
   };
 
   useEffect(() => {
     load();
     const channel = (supabase as any)
-      .channel('current_online_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'current_online' }, () => load())
+      .channel('checkins_online')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'employee_checkins' }, () => load())
       .subscribe();
-    return () => {
-      (supabase as any).removeChannel(channel);
-    };
+    return () => { (supabase as any).removeChannel(channel); };
   }, [refreshKey]);
 
   if (rows.length === 0) {
@@ -54,15 +53,16 @@ export const CurrentOnlineStatus = ({ refreshKey = 0 }: { refreshKey?: number })
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm">
       {rows.map((r) => (
-        <div key={r.employee_id} className="flex items-center gap-1.5">
+        <div key={r.id} className="flex items-center gap-1.5">
           <span className="relative inline-flex w-2.5 h-2.5">
             <span className="absolute inline-flex w-full h-full rounded-full bg-green-400 opacity-75 animate-ping" />
             <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-green-500" />
           </span>
           <span className="font-medium text-foreground">
-            {r.employees?.name || r.employee_id}
+            {r.employee_name || r.employee_id}
+            {r.resource_name ? <span className="text-muted-foreground"> @ {r.resource_name}</span> : null}
           </span>
-          <span className="text-muted-foreground">since {formatTime(r.started_at)}</span>
+          <span className="text-muted-foreground">since {formatTime(r.checkin_time)}</span>
         </div>
       ))}
     </div>
