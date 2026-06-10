@@ -33,6 +33,7 @@ const AttendanceReports = () => {
   const [typeId, setTypeId] = useState(ALL);
   const [resId, setResId] = useState(ALL);
   const [status, setStatus] = useState(ALL);
+  const [role, setRole] = useState(ALL);
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -50,6 +51,7 @@ const AttendanceReports = () => {
         type_id: typeId === ALL ? null : typeId,
         resource_id: resId === ALL ? null : resId,
         status: status === ALL ? null : status,
+        role: role === ALL ? null : role,
       });
       setRows(data);
     } catch (err: any) {
@@ -59,7 +61,7 @@ const AttendanceReports = () => {
 
   const handleReset = () => {
     setFromDate(monthAgoStr()); setToDate(todayStr());
-    setEmpId(ALL); setGroupId(ALL); setTypeId(ALL); setResId(ALL); setStatus(ALL);
+    setEmpId(ALL); setGroupId(ALL); setTypeId(ALL); setResId(ALL); setStatus(ALL); setRole(ALL);
     setRows([]); setHasSearched(false);
   };
 
@@ -71,11 +73,12 @@ const AttendanceReports = () => {
   const filteredResources = typeId === ALL ? resources : resources.filter(r => r.resource_type_id === typeId);
 
   const exportCSV = () => {
-    const headers = ['Employee', 'Group', 'Resource Type', 'Resource', 'Check-in', 'Check-out', 'Duration', 'Status'];
+    const headers = ['Employee', 'Group', 'Resource Type', 'Resource', 'Role', 'Check-in', 'Check-out', 'Duration', 'Status'];
     const lines = [headers.join(',')];
     rows.forEach(r => {
       lines.push([
         r.employee_name, r.group_name ?? '', r.resource_type_name, r.resource_name,
+        r.role_type,
         fmtDateTime(r.checkin_time), fmtDateTime(r.checkout_time),
         fmtDur(r.duration_minutes || 0), r.status,
       ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
@@ -149,6 +152,15 @@ const AttendanceReports = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div><Label>Role</Label>
+                <Select value={role} onValueChange={setRole}><SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>Tất cả</SelectItem>
+                    <SelectItem value="primary">Primary</SelectItem>
+                    <SelectItem value="support">Support</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-end gap-2">
                 <Button onClick={handleSearch} disabled={isLoading} className="flex-1">
                   {isLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Search className="w-4 h-4 mr-1" />} Search
@@ -178,6 +190,7 @@ const AttendanceReports = () => {
                       <TableHeader><TableRow>
                         <TableHead>Nhân viên</TableHead><TableHead>Group</TableHead>
                         <TableHead>Type</TableHead><TableHead>Resource</TableHead>
+                        <TableHead>Role</TableHead>
                         <TableHead>Bắt đầu</TableHead><TableHead>Kết thúc</TableHead>
                         <TableHead className="text-right">Duration</TableHead><TableHead>Status</TableHead>
                       </TableRow></TableHeader>
@@ -188,6 +201,7 @@ const AttendanceReports = () => {
                             <TableCell>{r.group_name ?? '—'}</TableCell>
                             <TableCell>{r.resource_type_name}</TableCell>
                             <TableCell>{r.resource_name}</TableCell>
+                            <TableCell>{r.role_type === 'primary' ? <Badge className="bg-green-600">Primary</Badge> : <Badge className="bg-amber-600">Support</Badge>}</TableCell>
                             <TableCell>{fmtDateTime(r.checkin_time)}</TableCell>
                             <TableCell>{fmtDateTime(r.checkout_time)}</TableCell>
                             <TableCell className="text-right">{fmtDur(r.duration_minutes || 0)}</TableCell>
