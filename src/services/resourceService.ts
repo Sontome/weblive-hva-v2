@@ -91,7 +91,7 @@ export async function expireSupportRequests(): Promise<void> {
 
 export async function sendTelegram(message: string): Promise<void> {
   try {
-    const response = await fetch('https://apilive.hanvietair.com/send', {
+    const response = await fetch('https://apilive.hanvietair.com/send_check_in', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
