@@ -62,7 +62,7 @@ export const EmployeeCheckInModal = ({ isOpen, onClose, onSuccess }: Props) => {
       const employeeName = employee?.name || 'Nhân viên';
   
       // Gọi API Telegram
-      await fetch('https://apilive.hanvietair.com/send', {
+      await fetch('https://apilive.hanvietair.com/send_check_in', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
