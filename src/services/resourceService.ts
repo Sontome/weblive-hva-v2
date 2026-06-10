@@ -91,7 +91,20 @@ export async function expireSupportRequests(): Promise<void> {
 
 export async function sendTelegram(message: string): Promise<void> {
   try {
-    await sb.functions.invoke('notify-telegram', { body: { message } });
+    const response = await fetch('https://apilive.hanvietair.com/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+      },
+      body: JSON.stringify({
+        message,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
   } catch (e) {
     console.error('sendTelegram failed', e);
   }
