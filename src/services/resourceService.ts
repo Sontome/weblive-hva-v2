@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type {
   EmployeeGroup, Employee, ResourceType, Resource, ResourceAccess,
-  EmployeeCheckin, ReportRow, DashboardSummaryRow,
+  EmployeeCheckin, ReportRow, DashboardSummaryRow, SupportRequest, CheckinRole,
 } from '@/types/resources';
 
 const sb = supabase as any;
@@ -43,12 +43,24 @@ export async function listActiveCheckins(): Promise<EmployeeCheckin[]> {
   return data || [];
 }
 
+export async function listOpenSupportRequests(): Promise<SupportRequest[]> {
+  const { data, error } = await sb.from('support_requests').select('*').eq('status', 'open');
+  if (error) throw error;
+  return data || [];
+}
+
 // ===== ACTIONS =====
-export async function checkinResource(employeeId: string, resourceId: string, notes?: string): Promise<string> {
+export async function checkinResource(
+  employeeId: string,
+  resourceId: string,
+  notes?: string,
+  roleType: CheckinRole = 'primary',
+): Promise<string> {
   const { data, error } = await sb.rpc('checkin_resource', {
     p_employee_id: employeeId,
     p_resource_id: resourceId,
     p_notes: notes ?? null,
+    p_role_type: roleType,
   });
   if (error) throw error;
   return data as string;
@@ -59,12 +71,39 @@ export async function checkoutResource(checkinId: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function requestSupport(resourceId: string, requesterEmployeeId: string): Promise<string> {
+  const { data, error } = await sb.rpc('request_support', {
+    p_resource_id: resourceId,
+    p_requester_employee_id: requesterEmployeeId,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function cancelSupportRequest(requestId: string): Promise<void> {
+  const { error } = await sb.rpc('cancel_support_request', { p_request_id: requestId });
+  if (error) throw error;
+}
+
+export async function expireSupportRequests(): Promise<void> {
+  await sb.rpc('expire_support_requests');
+}
+
+export async function sendTelegram(message: string): Promise<void> {
+  try {
+    await sb.functions.invoke('notify-telegram', { body: { message } });
+  } catch (e) {
+    console.error('sendTelegram failed', e);
+  }
+}
+
 // ===== REPORTS =====
 export interface ReportFilters {
   from_date: string; to_date: string;
   emp?: string | null; group_id?: string | null;
   type_id?: string | null; resource_id?: string | null;
   status?: string | null;
+  role?: string | null;
 }
 
 export async function reportCheckins(f: ReportFilters): Promise<ReportRow[]> {
@@ -76,6 +115,7 @@ export async function reportCheckins(f: ReportFilters): Promise<ReportRow[]> {
     type_id: f.type_id ?? null,
     resource_id: f.resource_id ?? null,
     status_f: f.status ?? null,
+    role_f: (f as any).role ?? null,
   });
   if (error) throw error;
   return data || [];
