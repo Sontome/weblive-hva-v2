@@ -37,6 +37,7 @@ export interface ResourceAccess {
 }
 
 export type CheckinStatus = 'active' | 'completed';
+export type CheckinRole = 'primary' | 'support';
 
 export interface EmployeeCheckin {
   id: string;
@@ -47,6 +48,7 @@ export interface EmployeeCheckin {
   status: CheckinStatus;
   notes: string | null;
   created_at: string;
+  role_type: CheckinRole;
 }
 
 export interface ActiveSessionView extends EmployeeCheckin {
@@ -67,6 +69,7 @@ export interface ReportRow {
   checkout_time: string | null;
   duration_minutes: number;
   status: CheckinStatus;
+  role_type: CheckinRole;
 }
 
 export interface DashboardSummaryRow {
@@ -77,4 +80,17 @@ export interface DashboardSummaryRow {
   available_count: number;
   today_sessions: number;
   today_minutes: number;
+}
+
+export type SupportRequestStatus = 'open' | 'resolved' | 'expired' | 'cancelled';
+
+export interface SupportRequest {
+  id: string;
+  resource_id: string;
+  requested_by_employee_id: string;
+  status: SupportRequestStatus;
+  created_at: string;
+  resolved_at: string | null;
+  resolved_by_employee_id: string | null;
+  expires_at: string;
 }
