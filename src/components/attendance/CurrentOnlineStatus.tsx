@@ -6,6 +6,7 @@ interface OnlineRow {
   employee_id: string;
   resource_id: string;
   checkin_time: string;
+  role_type?: 'primary' | 'support';
   employee_name?: string;
   resource_name?: string;
 }
@@ -21,12 +22,12 @@ export const CurrentOnlineStatus = ({ refreshKey = 0 }: { refreshKey?: number })
     try {
       const { data, error } = await (supabase as any)
         .from('employee_checkins')
-        .select('id, employee_id, resource_id, checkin_time, employees(name), resources(name)')
+        .select('id, employee_id, resource_id, checkin_time, role_type, employees(name), resources(name)')
         .eq('status', 'active');
       if (error) throw error;
       setRows(((data as any[]) || []).map(r => ({
         id: r.id, employee_id: r.employee_id, resource_id: r.resource_id,
-        checkin_time: r.checkin_time,
+        checkin_time: r.checkin_time, role_type: r.role_type,
         employee_name: r.employees?.name, resource_name: r.resources?.name,
       })));
     } catch (err) { setRows([]); }
@@ -56,11 +57,12 @@ export const CurrentOnlineStatus = ({ refreshKey = 0 }: { refreshKey?: number })
         <div key={r.id} className="flex items-center gap-1.5">
           <span className="relative inline-flex w-2.5 h-2.5">
             <span className="absolute inline-flex w-full h-full rounded-full bg-green-400 opacity-75 animate-ping" />
-            <span className="relative inline-flex w-2.5 h-2.5 rounded-full bg-green-500" />
+            <span className={`relative inline-flex w-2.5 h-2.5 rounded-full ${r.role_type === 'support' ? 'bg-amber-500' : 'bg-green-500'}`} />
           </span>
           <span className="font-medium text-foreground">
             {r.employee_name || r.employee_id}
             {r.resource_name ? <span className="text-muted-foreground"> @ {r.resource_name}</span> : null}
+            {r.role_type === 'support' ? <span className="ml-1 text-[10px] uppercase text-amber-600 font-semibold">SUP</span> : null}
           </span>
           <span className="text-muted-foreground">since {formatTime(r.checkin_time)}</span>
         </div>
