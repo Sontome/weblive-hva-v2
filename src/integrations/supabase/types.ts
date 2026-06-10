@@ -14,6 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
+      employee_checkins: {
+        Row: {
+          checkin_time: string
+          checkout_time: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          notes: string | null
+          resource_id: string
+          role_type: Database["public"]["Enums"]["checkin_role"]
+          status: Database["public"]["Enums"]["checkin_status"]
+        }
+        Insert: {
+          checkin_time?: string
+          checkout_time?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          resource_id: string
+          role_type?: Database["public"]["Enums"]["checkin_role"]
+          status?: Database["public"]["Enums"]["checkin_status"]
+        }
+        Update: {
+          checkin_time?: string
+          checkout_time?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          resource_id?: string
+          role_type?: Database["public"]["Enums"]["checkin_role"]
+          status?: Database["public"]["Enums"]["checkin_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_checkins_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_checkins_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_groups: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employees: {
+        Row: {
+          active: boolean
+          created_at: string
+          employee_group_id: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          employee_group_id?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          employee_group_id?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_employee_group_id_fkey"
+            columns: ["employee_group_id"]
+            isOneToOne: false
+            referencedRelation: "employee_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_configs: {
         Row: {
           created_at: string
@@ -203,6 +319,113 @@ export type Database = {
         }
         Relationships: []
       }
+      resource_access: {
+        Row: {
+          created_at: string
+          employee_group_id: string
+          id: string
+          resource_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_group_id: string
+          id?: string
+          resource_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_group_id?: string
+          id?: string
+          resource_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_access_employee_group_id_fkey"
+            columns: ["employee_group_id"]
+            isOneToOne: false
+            referencedRelation: "employee_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_access_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resource_types: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      resources: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          resource_type_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          resource_type_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          resource_type_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_resource_type_id_fkey"
+            columns: ["resource_type_id"]
+            isOneToOne: false
+            referencedRelation: "resource_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       route_discounts: {
         Row: {
           airline_code: string
@@ -236,6 +459,61 @@ export type Database = {
         }
         Relationships: []
       }
+      support_requests: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          requested_by_employee_id: string
+          resolved_at: string | null
+          resolved_by_employee_id: string | null
+          resource_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          requested_by_employee_id: string
+          resolved_at?: string | null
+          resolved_by_employee_id?: string | null
+          resource_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          requested_by_employee_id?: string
+          resolved_at?: string | null
+          resolved_by_employee_id?: string | null
+          resource_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_requests_requested_by_employee_id_fkey"
+            columns: ["requested_by_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_requests_resolved_by_employee_id_fkey"
+            columns: ["resolved_by_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_requests_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -262,6 +540,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_support_request: {
+        Args: { p_request_id: string }
+        Returns: undefined
+      }
+      checkin_resource:
+        | {
+            Args: {
+              p_employee_id: string
+              p_notes?: string
+              p_resource_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_employee_id: string
+              p_notes?: string
+              p_resource_id: string
+              p_role_type?: string
+            }
+            Returns: string
+          }
+      checkout_resource: { Args: { p_checkin_id: string }; Returns: undefined }
+      dashboard_summary: {
+        Args: never
+        Returns: {
+          active_count: number
+          available_count: number
+          resource_type_id: string
+          resource_type_name: string
+          today_minutes: number
+          today_sessions: number
+          total_resources: number
+        }[]
+      }
+      expire_support_requests: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -269,9 +583,70 @@ export type Database = {
         }
         Returns: boolean
       }
+      report_checkins:
+        | {
+            Args: {
+              emp?: string
+              from_date: string
+              group_id?: string
+              resource_id?: string
+              status_f?: string
+              to_date: string
+              type_id?: string
+            }
+            Returns: {
+              checkin_time: string
+              checkout_time: string
+              duration_minutes: number
+              employee_id: string
+              employee_name: string
+              group_id: string
+              group_name: string
+              id: string
+              resource_id: string
+              resource_name: string
+              resource_type_id: string
+              resource_type_name: string
+              status: string
+            }[]
+          }
+        | {
+            Args: {
+              emp?: string
+              from_date: string
+              group_id?: string
+              resource_id?: string
+              role_f?: string
+              status_f?: string
+              to_date: string
+              type_id?: string
+            }
+            Returns: {
+              checkin_time: string
+              checkout_time: string
+              duration_minutes: number
+              employee_id: string
+              employee_name: string
+              group_id: string
+              group_name: string
+              id: string
+              resource_id: string
+              resource_name: string
+              resource_type_id: string
+              resource_type_name: string
+              role_type: string
+              status: string
+            }[]
+          }
+      request_support: {
+        Args: { p_requester_employee_id: string; p_resource_id: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "user"
+      checkin_role: "primary" | "support"
+      checkin_status: "active" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -400,6 +775,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      checkin_role: ["primary", "support"],
+      checkin_status: ["active", "completed"],
     },
   },
 } as const
