@@ -16,6 +16,7 @@ import { VNATicketModal } from '../components/VNATicketModal';
 import { OtherTicketModal } from '../components/OtherTicketModal';
 import { AddPNRModal } from '../components/AddPNRModal';
 import { CurrentOnlineStatus } from '../components/attendance/CurrentOnlineStatus';
+import { EmployeeIdentityBadge } from '../components/attendance/EmployeeIdentityBadge';
 import { Button } from '@/components/ui/button';
 import { searchAllFlights } from '../services/flightService';
 import { searchLowFare, LowFareDay } from '../services/lowfareService';
@@ -454,6 +455,7 @@ const Index = () => {
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <CurrentOnlineStatus refreshKey={onlineRefreshKey} />
             <div className="flex flex-wrap gap-2">
+              <EmployeeIdentityBadge />
               <Button
                 onClick={() => navigate('/checkin')}
                 variant="action-checkin"
