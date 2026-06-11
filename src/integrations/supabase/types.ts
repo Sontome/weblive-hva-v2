@@ -96,6 +96,7 @@ export type Database = {
         Row: {
           active: boolean
           created_at: string
+          display_name: string | null
           employee_group_id: string | null
           id: string
           name: string
@@ -105,6 +106,7 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          display_name?: string | null
           employee_group_id?: string | null
           id?: string
           name: string
@@ -114,6 +116,7 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          display_name?: string | null
           employee_group_id?: string | null
           id?: string
           name?: string
