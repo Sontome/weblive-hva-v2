@@ -30,7 +30,7 @@ const ResourceAdmin = () => {
 
   // form states
   const [newGroup, setNewGroup] = useState('');
-  const [newEmp, setNewEmp] = useState({ name: '', group: '' });
+  const [newEmp, setNewEmp] = useState({ name: '', display_name: '', group: '' });
   const [newType, setNewType] = useState('');
   const [newRes, setNewRes] = useState({ name: '', type: '' });
 
@@ -127,21 +127,31 @@ const ResourceAdmin = () => {
       {/* EMPLOYEES */}
       <TabsContent value="employees">
         <Card><CardHeader><CardTitle className="text-base">Thêm Nhân viên</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <Input placeholder="Tên" value={newEmp.name} onChange={e => setNewEmp({ ...newEmp, name: e.target.value })} />
+          <CardContent className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+            <Input placeholder="Account name (vd: Ms. Nga - Live)" value={newEmp.name} onChange={e => {
+              const v = e.target.value;
+              const suggested = v.split(/\s+[-–|@/]\s+|\s*[-–|]\s*/)[0].trim();
+              setNewEmp(p => ({ ...p, name: v, display_name: p.display_name && p.display_name !== suggested ? p.display_name : suggested }));
+            }} />
+            <Input placeholder="Display name (vd: Ms. Nga)" value={newEmp.display_name} onChange={e => setNewEmp({ ...newEmp, display_name: e.target.value })} />
             <Select value={newEmp.group} onValueChange={v => setNewEmp({ ...newEmp, group: v })}>
               <SelectTrigger><SelectValue placeholder="Group" /></SelectTrigger>
               <SelectContent>{groups.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent>
             </Select>
-            <Button disabled={busy || !newEmp.name.trim()} onClick={() => run(async () => { await upsertEmployee({ name: newEmp.name.trim(), employee_group_id: newEmp.group || null }); setNewEmp({ name: '', group: '' }); })}><Plus className="w-4 h-4 mr-1" /> Thêm</Button>
+            <Button disabled={busy || !newEmp.name.trim()} onClick={() => run(async () => {
+              const dn = newEmp.display_name.trim() || newEmp.name.trim();
+              await upsertEmployee({ name: newEmp.name.trim(), display_name: dn, employee_group_id: newEmp.group || null });
+              setNewEmp({ name: '', display_name: '', group: '' });
+            })}><Plus className="w-4 h-4 mr-1" /> Thêm</Button>
           </CardContent>
         </Card>
         <Table className="mt-4">
-          <TableHeader><TableRow><TableHead>Tên</TableHead><TableHead>Group</TableHead><TableHead className="w-24">Active</TableHead><TableHead className="w-20"></TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Account Name</TableHead><TableHead>Display Name</TableHead><TableHead>Group</TableHead><TableHead className="w-24">Active</TableHead><TableHead className="w-20"></TableHead></TableRow></TableHeader>
           <TableBody>
             {employees.map(e => (
               <TableRow key={e.id}>
                 <TableCell><Input defaultValue={e.name} onBlur={ev => ev.target.value !== e.name && run(() => upsertEmployee({ id: e.id, name: ev.target.value }))} /></TableCell>
+                <TableCell><Input defaultValue={e.display_name ?? e.name} placeholder="Display name" onBlur={ev => ev.target.value !== (e.display_name ?? '') && run(() => upsertEmployee({ id: e.id, display_name: ev.target.value.trim() || e.name }))} /></TableCell>
                 <TableCell>
                   <Select value={e.employee_group_id ?? ''} onValueChange={v => run(() => upsertEmployee({ id: e.id, employee_group_id: v || null }))}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
