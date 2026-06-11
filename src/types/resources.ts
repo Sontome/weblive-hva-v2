@@ -8,6 +8,7 @@ export interface EmployeeGroup {
 export interface Employee {
   id: string;
   name: string;
+  display_name: string | null;
   employee_group_id: string | null;
   active: boolean;
   sort_order: number;
