@@ -225,61 +225,61 @@ const ShiftDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-slate-50 text-slate-100">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate('/attendance-reports')} className="bg-slate-800 border-slate-700 text-slate-100 hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={() => navigate('/attendance-reports')} className="bg-gray-50 border-slate-300 text-slate-900 hover:bg-slate-100">
               <ArrowLeft className="w-4 h-4 mr-1" /> Quay lại
             </Button>
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Shift Report Dashboard</h1>
-              <div className="text-xs text-slate-400">Auto refresh mỗi 30s · {filtered.length} sessions</div>
+              <div className="text-xs text-slate-500">Auto refresh mỗi 30s · {filtered.length} sessions</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="bg-slate-800 border-slate-700 text-slate-100 hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={fetchData} disabled={loading} className="bg-gray-50 border-slate-300 text-slate-900 hover:bg-slate-100">
               {loading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />} Refresh
             </Button>
-            <Button variant="outline" size="sm" onClick={exportCSV} className="bg-slate-800 border-slate-700 text-slate-100 hover:bg-slate-700">
+            <Button variant="outline" size="sm" onClick={exportCSV} className="bg-gray-50 border-slate-300 text-slate-900 hover:bg-slate-100">
               <Download className="w-4 h-4 mr-1" /> Export
             </Button>
           </div>
         </div>
 
         {/* Filters */}
-        <Card className="bg-slate-900 border-slate-800 mb-4">
+        <Card className="bg-white border-slate-200 shadow-sm mb-4">
           <CardContent className="pt-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-              <div><Label className="text-slate-300 text-xs">Từ ngày</Label><Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="mt-1 bg-slate-800 border-slate-700" /></div>
-              <div><Label className="text-slate-300 text-xs">Đến ngày</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} className="mt-1 bg-slate-800 border-slate-700" /></div>
-              <div><Label className="text-slate-300 text-xs">Resource</Label>
+              <div><Label className="text-slate-600 text-xs">Từ ngày</Label><Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="mt-1 bg-white border-slate-300" /></div>
+              <div><Label className="text-slate-600 text-xs">Đến ngày</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} className="mt-1 bg-white border-slate-300" /></div>
+              <div><Label className="text-slate-600 text-xs">Resource</Label>
                 <Select value={resourceId} onValueChange={setResourceId}>
-                  <SelectTrigger className="mt-1 bg-slate-800 border-slate-700"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1 bg-white border-slate-300"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value={ALL}>Tất cả</SelectItem>{resources.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label className="text-slate-300 text-xs">Nhân viên</Label>
+              <div><Label className="text-slate-600 text-xs">Nhân viên</Label>
                 <Select value={displayName} onValueChange={setDisplayName}>
-                  <SelectTrigger className="mt-1 bg-slate-800 border-slate-700"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1 bg-white border-slate-300"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value={ALL}>Tất cả</SelectItem>{allDisplayNames.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label className="text-slate-300 text-xs">Group by</Label>
+              <div><Label className="text-slate-600 text-xs">Group by</Label>
                 <Select value={groupMode} onValueChange={(v: any) => setGroupMode(v)}>
-                  <SelectTrigger className="mt-1 bg-slate-800 border-slate-700"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1 bg-white border-slate-300"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="display">Display Name</SelectItem>
                     <SelectItem value="account">Account</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label className="text-slate-300 text-xs">Zoom nhanh</Label>
+              <div><Label className="text-slate-600 text-xs">Zoom nhanh</Label>
                 <div className="flex gap-1 mt-1">
-                  <Button size="sm" variant="outline" className="flex-1 bg-slate-800 border-slate-700 text-xs" onClick={() => { setFrom(todayStr()); setTo(todayStr()); }}>1D</Button>
-                  <Button size="sm" variant="outline" className="flex-1 bg-slate-800 border-slate-700 text-xs" onClick={() => { setFrom(daysAgoStr(6)); setTo(todayStr()); }}>7D</Button>
-                  <Button size="sm" variant="outline" className="flex-1 bg-slate-800 border-slate-700 text-xs" onClick={() => { setFrom(daysAgoStr(29)); setTo(todayStr()); }}>30D</Button>
+                  <Button size="sm" variant="outline" className="flex-1 bg-white border-slate-300 text-xs" onClick={() => { setFrom(todayStr()); setTo(todayStr()); }}>1D</Button>
+                  <Button size="sm" variant="outline" className="flex-1 bg-white border-slate-300 text-xs" onClick={() => { setFrom(daysAgoStr(6)); setTo(todayStr()); }}>7D</Button>
+                  <Button size="sm" variant="outline" className="flex-1 bg-white border-slate-300 text-xs" onClick={() => { setFrom(daysAgoStr(29)); setTo(todayStr()); }}>30D</Button>
                 </div>
               </div>
             </div>
@@ -289,15 +289,15 @@ const ShiftDashboard = () => {
         {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
           {[
-            { i: <Clock className="w-4 h-4" />, l: 'Tổng giờ trực', v: `${kpis.totalHours}h`, c: 'from-indigo-500/20 to-indigo-500/5 border-indigo-500/30' },
-            { i: <Users className="w-4 h-4" />, l: 'Tổng checkin', v: kpis.sessions, c: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/30' },
-            { i: <AlertTriangle className="w-4 h-4" />, l: 'Support requests', v: kpis.supports, c: 'from-amber-500/20 to-amber-500/5 border-amber-500/30' },
-            { i: <TrendingUp className="w-4 h-4" />, l: 'TG phản hồi TB', v: kpis.avgRespSec ? `${Math.floor(kpis.avgRespSec / 60)}m${Math.round(kpis.avgRespSec % 60)}s` : '—', c: 'from-rose-500/20 to-rose-500/5 border-rose-500/30' },
-            { i: <Crown className="w-4 h-4" />, l: 'Trực nhiều nhất', v: <><div className="truncate">{kpis.topName}</div><div className="text-xs text-slate-400">{kpis.topHours}h</div></>, c: 'from-fuchsia-500/20 to-fuchsia-500/5 border-fuchsia-500/30' },
+            { i: <Clock className="w-4 h-4" />, l: 'Tổng giờ trực', v: `${kpis.totalHours}h`, c: 'from-indigo-100 to-indigo-50 border-indigo-500/30' },
+            { i: <Users className="w-4 h-4" />, l: 'Tổng checkin', v: kpis.sessions, c: 'from-emerald-100 to-emerald-50 border-emerald-500/30' },
+            { i: <AlertTriangle className="w-4 h-4" />, l: 'Support requests', v: kpis.supports, c: 'from-amber-100 to-amber-50 border-amber-500/30' },
+            { i: <TrendingUp className="w-4 h-4" />, l: 'TG phản hồi TB', v: kpis.avgRespSec ? `${Math.floor(kpis.avgRespSec / 60)}m${Math.round(kpis.avgRespSec % 60)}s` : '—', c: 'from-rose-100 to-rose-50 border-rose-500/30' },
+            { i: <Crown className="w-4 h-4" />, l: 'Trực nhiều nhất', v: <><div className="truncate">{kpis.topName}</div><div className="text-xs text-slate-500">{kpis.topHours}h</div></>, c: 'from-fuchsia-100 to-fuchsia-50 border-fuchsia-500/30' },
           ].map((k, i) => (
             <Card key={i} className={`bg-gradient-to-br ${k.c} border`}>
               <CardContent className="pt-4">
-                <div className="flex items-center gap-2 text-xs text-slate-300">{k.i}{k.l}</div>
+                <div className="flex items-center gap-2 text-xs text-slate-600">{k.i}{k.l}</div>
                 <div className="text-2xl font-bold mt-1">{k.v}</div>
               </CardContent>
             </Card>
@@ -305,18 +305,18 @@ const ShiftDashboard = () => {
         </div>
 
         {/* Timeline */}
-        <Card className="bg-slate-900 border-slate-800 mb-4">
+        <Card className="bg-white border-slate-200 shadow-sm mb-4">
           <CardHeader className="pb-2"><CardTitle className="text-base">Timeline trực</CardTitle></CardHeader>
           <CardContent>
-            {loading ? <div className="py-12 text-center text-slate-400"><Loader2 className="w-6 h-6 animate-spin inline" /></div>
-            : rows.length === 0 ? <div className="py-12 text-center text-slate-400">Không có dữ liệu</div>
+            {loading ? <div className="py-12 text-center text-slate-500"><Loader2 className="w-6 h-6 animate-spin inline" /></div>
+            : rows.length === 0 ? <div className="py-12 text-center text-slate-500">Không có dữ liệu</div>
             : (
               <div className="overflow-x-auto">
                 <div className="min-w-[900px]">
                   {/* Ticks */}
                   <div className="flex">
                     <div className="w-44 shrink-0" />
-                    <div className="relative flex-1 h-6 border-b border-slate-800">
+                    <div className="relative flex-1 h-6 border-b border-slate-200">
                       {ticks.map((t, i) => (
                         <div key={i} className="absolute top-0 text-[10px] text-slate-500" style={{ left: `${t.left}%`, transform: 'translateX(-50%)' }}>
                           {t.label}
@@ -327,7 +327,7 @@ const ShiftDashboard = () => {
                   {/* Rows */}
                   <div className="max-h-[500px] overflow-y-auto">
                     {rows.map(row => (
-                      <div key={row.key} className="flex items-center hover:bg-slate-800/40">
+                      <div key={row.key} className="flex items-center hover:bg-slate-100">
                         <button onClick={() => setSelectedEmp(groupMode === 'display' ? row.label : displayOf(empById.get(row.key)))} className="w-44 shrink-0 py-2 px-2 text-left text-sm font-medium truncate hover:text-indigo-400">
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full" style={{ background: colorFor(row.label) }} />
@@ -337,10 +337,10 @@ const ShiftDashboard = () => {
                             </div>
                           </div>
                         </button>
-                        <div className="relative flex-1 h-10 border-b border-slate-800/50">
+                        <div className="relative flex-1 h-10 border-b border-slate-200/50">
                           {/* grid lines */}
                           {ticks.map((t, i) => (
-                            <div key={i} className="absolute top-0 bottom-0 border-l border-slate-800/40" style={{ left: `${t.left}%` }} />
+                            <div key={i} className="absolute top-0 bottom-0 border-l border-slate-200/40" style={{ left: `${t.left}%` }} />
                           ))}
                           {row.items.map(c => {
                             const s = new Date(c.checkin_time).getTime();
@@ -392,7 +392,7 @@ const ShiftDashboard = () => {
                 </div>
               </div>
             )}
-            <div className="flex items-center gap-4 mt-3 text-xs text-slate-400">
+            <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-indigo-500" /> Primary</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: 'repeating-linear-gradient(45deg,#6366f1,#6366f1 3px,#6366f199 3px,#6366f199 6px)' }} /> Support</span>
               <span className="flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-rose-500" fill="currentColor" /> Support request</span>
@@ -402,7 +402,7 @@ const ShiftDashboard = () => {
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-          <Card className="bg-slate-900 border-slate-800">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardHeader className="pb-2"><CardTitle className="text-base">Tỷ lệ giờ trực</CardTitle></CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={260}>
@@ -415,7 +415,7 @@ const ShiftDashboard = () => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-          <Card className="bg-slate-900 border-slate-800">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardHeader className="pb-2"><CardTitle className="text-base">Tổng giờ theo nhân viên</CardTitle></CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={260}>
@@ -431,7 +431,7 @@ const ShiftDashboard = () => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-          <Card className="bg-slate-900 border-slate-800">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardHeader className="pb-2"><CardTitle className="text-base">Giờ trực theo ngày</CardTitle></CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={220}>
@@ -445,7 +445,7 @@ const ShiftDashboard = () => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-          <Card className="bg-slate-900 border-slate-800">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardHeader className="pb-2"><CardTitle className="text-base">Support requests trend</CardTitle></CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={220}>
@@ -465,7 +465,7 @@ const ShiftDashboard = () => {
 
       {/* Session detail */}
       <Dialog open={!!selected} onOpenChange={o => !o && setSelected(null)}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-slate-100">
+        <DialogContent className="bg-white border-slate-200 shadow-sm text-slate-100">
           <DialogHeader><DialogTitle>Chi tiết phiên trực</DialogTitle></DialogHeader>
           {selected && (() => {
             const e = empById.get(selected.employee_id);
@@ -473,14 +473,14 @@ const ShiftDashboard = () => {
             const t = r ? typeById.get(r.resource_type_id) : null;
             return (
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-slate-400">Display Name</span><span className="font-medium">{displayOf(e)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Account</span><span>{e?.name ?? '—'}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Resource</span><span>{t?.name ? `${t.name} · ` : ''}{r?.name ?? '—'}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Role</span>{selected.role_type === 'primary' ? <Badge className="bg-emerald-600">Primary</Badge> : <Badge className="bg-amber-600">Support</Badge>}</div>
-                <div className="flex justify-between"><span className="text-slate-400">Checkin</span><span>{fmtDT(selected.checkin_time)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Checkout</span><span>{selected.checkout_time ? fmtDT(selected.checkout_time) : '— (đang trực)'}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Tổng thời lượng</span><span className="font-semibold">{fmtDur(durMin(selected))}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Status</span><span>{selected.status}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Display Name</span><span className="font-medium">{displayOf(e)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Account</span><span>{e?.name ?? '—'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Resource</span><span>{t?.name ? `${t.name} · ` : ''}{r?.name ?? '—'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Role</span>{selected.role_type === 'primary' ? <Badge className="bg-emerald-600">Primary</Badge> : <Badge className="bg-amber-600">Support</Badge>}</div>
+                <div className="flex justify-between"><span className="text-slate-500">Checkin</span><span>{fmtDT(selected.checkin_time)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Checkout</span><span>{selected.checkout_time ? fmtDT(selected.checkout_time) : '— (đang trực)'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Tổng thời lượng</span><span className="font-semibold">{fmtDur(durMin(selected))}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Status</span><span>{selected.status}</span></div>
               </div>
             );
           })()}
@@ -489,7 +489,7 @@ const ShiftDashboard = () => {
 
       {/* Support request detail */}
       <Dialog open={!!selectedSR} onOpenChange={o => !o && setSelectedSR(null)}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-slate-100">
+        <DialogContent className="bg-white border-slate-200 shadow-sm text-slate-100">
           <DialogHeader><DialogTitle>Support request</DialogTitle></DialogHeader>
           {selectedSR && (() => {
             const requester = empById.get(selectedSR.requested_by_employee_id);
@@ -497,12 +497,12 @@ const ShiftDashboard = () => {
             const r = resById.get(selectedSR.resource_id);
             return (
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-slate-400">Người tạo</span><span>{displayOf(requester)}{requester && requester.name !== displayOf(requester) ? ` (${requester.name})` : ''}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Thời gian tạo</span><span>{fmtDT(selectedSR.created_at)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Trạng thái</span><span>{selectedSR.status}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Người xử lý</span><span>{resolver ? displayOf(resolver) : '—'}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Thời gian xử lý</span><span>{fmtDT(selectedSR.resolved_at)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-400">Resource</span><span>{r?.name ?? '—'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Người tạo</span><span>{displayOf(requester)}{requester && requester.name !== displayOf(requester) ? ` (${requester.name})` : ''}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Thời gian tạo</span><span>{fmtDT(selectedSR.created_at)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Trạng thái</span><span>{selectedSR.status}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Người xử lý</span><span>{resolver ? displayOf(resolver) : '—'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Thời gian xử lý</span><span>{fmtDT(selectedSR.resolved_at)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Resource</span><span>{r?.name ?? '—'}</span></div>
               </div>
             );
           })()}
@@ -511,13 +511,13 @@ const ShiftDashboard = () => {
 
       {/* Employee detail */}
       <Dialog open={!!selectedEmp} onOpenChange={o => !o && setSelectedEmp(null)}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-slate-100 max-w-lg">
+        <DialogContent className="bg-white border-slate-200 shadow-sm text-slate-100 max-w-lg">
           <DialogHeader><DialogTitle>{selectedEmp}</DialogTitle></DialogHeader>
           {empDetail && (
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-slate-400">Tổng giờ</span><span className="text-xl font-bold">{fmtDur(empDetail.total)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Tổng giờ</span><span className="text-xl font-bold">{fmtDur(empDetail.total)}</span></div>
               <div>
-                <div className="text-slate-400 mb-1">Accounts</div>
+                <div className="text-slate-500 mb-1">Accounts</div>
                 <div className="space-y-1">
                   {empDetail.perAccount.map(a => (
                     <div key={a.name} className="flex justify-between bg-slate-800/60 px-2 py-1 rounded">
@@ -527,7 +527,7 @@ const ShiftDashboard = () => {
                 </div>
               </div>
               <div>
-                <div className="text-slate-400 mb-1">Lịch sử gần nhất</div>
+                <div className="text-slate-500 mb-1">Lịch sử gần nhất</div>
                 <div className="space-y-1 max-h-60 overflow-y-auto">
                   {empDetail.sessions.map(s => {
                     const r = resById.get(s.resource_id);
