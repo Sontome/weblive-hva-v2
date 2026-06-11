@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, Search, RotateCcw, Download } from 'lucide-react';
+import { Loader2, ArrowLeft, Search, RotateCcw, Download, BarChart3 } from 'lucide-react';
 import { useResources } from '@/hooks/useResources';
 import { reportCheckins, dashboardSummary } from '@/services/resourceService';
 import type { ReportRow, DashboardSummaryRow } from '@/types/resources';
@@ -100,9 +100,14 @@ const AttendanceReports = () => {
             </Button>
             <h1 className="text-2xl font-bold">Attendance Reports</h1>
           </div>
-          <Button variant="outline" size="sm" onClick={exportCSV} disabled={rows.length === 0}>
-            <Download className="w-4 h-4 mr-1" /> Export CSV
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportCSV} disabled={rows.length === 0}>
+              <Download className="w-4 h-4 mr-1" /> Export CSV
+            </Button>
+            <Button size="sm" onClick={() => navigate('/attendance-reports/shift-dashboard')} className="bg-indigo-600 hover:bg-indigo-700">
+              <BarChart3 className="w-4 h-4 mr-1" /> Shift Report Dashboard
+            </Button>
+          </div>
         </div>
 
         {/* Today dashboard */}
