@@ -55,6 +55,24 @@ export interface PriceConfig {
   other_threshold_5: number;
   other_discount_ow_5: number;
   other_discount_rt_5: number;
+  // SunPQ (5 tiers)
+  sunpq_one_way_fee?: number;
+  sunpq_round_trip_fee?: number;
+  sunpq_threshold_1?: number;
+  sunpq_discount_ow_1?: number;
+  sunpq_discount_rt_1?: number;
+  sunpq_threshold_2?: number;
+  sunpq_discount_ow_2?: number;
+  sunpq_discount_rt_2?: number;
+  sunpq_threshold_3?: number;
+  sunpq_discount_ow_3?: number;
+  sunpq_discount_rt_3?: number;
+  sunpq_threshold_4?: number;
+  sunpq_discount_ow_4?: number;
+  sunpq_discount_rt_4?: number;
+  sunpq_threshold_5?: number;
+  sunpq_discount_ow_5?: number;
+  sunpq_discount_rt_5?: number;
 }
 
 export const usePriceConfigs = () => {
