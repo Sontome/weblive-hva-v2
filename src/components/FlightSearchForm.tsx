@@ -78,6 +78,24 @@ interface FlightSearchData {
   otherThreshold5: number;
   otherDiscountOW5: number;
   otherDiscountRT5: number;
+  // SunPQ
+  sunpqOneWayFee?: number;
+  sunpqRoundTripFee?: number;
+  sunpqThreshold1?: number;
+  sunpqDiscountOW1?: number;
+  sunpqDiscountRT1?: number;
+  sunpqThreshold2?: number;
+  sunpqDiscountOW2?: number;
+  sunpqDiscountRT2?: number;
+  sunpqThreshold3?: number;
+  sunpqDiscountOW3?: number;
+  sunpqDiscountRT3?: number;
+  sunpqThreshold4?: number;
+  sunpqDiscountOW4?: number;
+  sunpqDiscountRT4?: number;
+  sunpqThreshold5?: number;
+  sunpqDiscountOW5?: number;
+  sunpqDiscountRT5?: number;
 }
 
 interface FlightSearchFormProps {
@@ -307,6 +325,24 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
         otherThreshold5: Number(config.other_threshold_5),
         otherDiscountOW5: Number(config.other_discount_ow_5),
         otherDiscountRT5: Number(config.other_discount_rt_5),
+        // SunPQ
+        sunpqOneWayFee: Number((config as any).sunpq_one_way_fee || 0),
+        sunpqRoundTripFee: Number((config as any).sunpq_round_trip_fee || 0),
+        sunpqThreshold1: Number((config as any).sunpq_threshold_1 || 0),
+        sunpqDiscountOW1: Number((config as any).sunpq_discount_ow_1 || 0),
+        sunpqDiscountRT1: Number((config as any).sunpq_discount_rt_1 || 0),
+        sunpqThreshold2: Number((config as any).sunpq_threshold_2 || 0),
+        sunpqDiscountOW2: Number((config as any).sunpq_discount_ow_2 || 0),
+        sunpqDiscountRT2: Number((config as any).sunpq_discount_rt_2 || 0),
+        sunpqThreshold3: Number((config as any).sunpq_threshold_3 || 0),
+        sunpqDiscountOW3: Number((config as any).sunpq_discount_ow_3 || 0),
+        sunpqDiscountRT3: Number((config as any).sunpq_discount_rt_3 || 0),
+        sunpqThreshold4: Number((config as any).sunpq_threshold_4 || 0),
+        sunpqDiscountOW4: Number((config as any).sunpq_discount_ow_4 || 0),
+        sunpqDiscountRT4: Number((config as any).sunpq_discount_rt_4 || 0),
+        sunpqThreshold5: Number((config as any).sunpq_threshold_5 || 0),
+        sunpqDiscountOW5: Number((config as any).sunpq_discount_ow_5 || 0),
+        sunpqDiscountRT5: Number((config as any).sunpq_discount_rt_5 || 0),
       };
     }
     // Fallback defaults
@@ -360,6 +396,23 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
       otherThreshold5: 0,
       otherDiscountOW5: 0,
       otherDiscountRT5: 0,
+      sunpqOneWayFee: 0,
+      sunpqRoundTripFee: 0,
+      sunpqThreshold1: 0,
+      sunpqDiscountOW1: 0,
+      sunpqDiscountRT1: 0,
+      sunpqThreshold2: 0,
+      sunpqDiscountOW2: 0,
+      sunpqDiscountRT2: 0,
+      sunpqThreshold3: 0,
+      sunpqDiscountOW3: 0,
+      sunpqDiscountRT3: 0,
+      sunpqThreshold4: 0,
+      sunpqDiscountOW4: 0,
+      sunpqDiscountRT4: 0,
+      sunpqThreshold5: 0,
+      sunpqDiscountOW5: 0,
+      sunpqDiscountRT5: 0,
     };
   };
 
@@ -510,7 +563,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
     }
   };
 
-  const adjustFee = (type: "oneWay" | "roundTripVietjet" | "roundTripVNA" | "roundTripOther", direction: "up" | "down") => {
+  const adjustFee = (type: "oneWay" | "roundTripVietjet" | "roundTripVNA" | "roundTripOther" | "roundTripSunPQ", direction: "up" | "down") => {
     if (!isCustomMode) return; // Only allow adjustment in custom mode
 
     setFormData((prev) => {
@@ -519,6 +572,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
         roundTripVietjet: "roundTripFeeVietjet",
         roundTripVNA: "roundTripFeeVNA",
         roundTripOther: "roundTripFeeOther",
+        roundTripSunPQ: "sunpqRoundTripFee",
       };
       const key = keyMap[type];
       const currentValue = prev[key] as number;
@@ -821,6 +875,53 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
               </div>
             </div>
           </div>
+          {/* SunPQ Fees */}
+          <div className="flex flex-wrap gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">SunPQ 1c</label>
+              <input
+                type="number"
+                value={formData.sunpqOneWayFee ?? 0}
+                onChange={(e) =>
+                  isCustomMode &&
+                  setFormData((prev) => ({ ...prev, sunpqOneWayFee: Math.max(0, parseInt(e.target.value) || 0) }))
+                }
+                className={`w-16 sm:w-20 px-1 sm:px-2 py-1 border border-gray-300 rounded-lg text-xs sm:text-sm font-bold ${
+                  !isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""
+                } ${getFeeTextColor()}`}
+                min="0"
+                disabled={!isCustomMode}
+              />
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">SunPQ KH</label>
+              <div className="flex items-center">
+                <input
+                  type="number"
+                  value={formData.sunpqRoundTripFee ?? 0}
+                  onChange={(e) =>
+                    isCustomMode &&
+                    setFormData((prev) => ({ ...prev, sunpqRoundTripFee: Math.max(0, parseInt(e.target.value) || 0) }))
+                  }
+                  className={`w-16 sm:w-20 px-1 sm:px-2 py-1 border border-gray-300 rounded-l-lg text-xs sm:text-sm font-bold ${
+                    !isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""
+                  } ${getFeeTextColor()}`}
+                  min="0"
+                  disabled={!isCustomMode}
+                />
+                <div className="flex flex-col">
+                  <button type="button" onClick={() => adjustFee("roundTripSunPQ", "up")} disabled={!isCustomMode}
+                    className={`px-1 py-0.5 border border-gray-300 rounded-tr-lg ${isCustomMode ? "bg-gray-200 hover:bg-gray-300" : "bg-gray-100 cursor-not-allowed"}`}>
+                    <ChevronUp className="w-3 h-3" />
+                  </button>
+                  <button type="button" onClick={() => adjustFee("roundTripSunPQ", "down")} disabled={!isCustomMode}
+                    className={`px-1 py-0.5 border border-gray-300 rounded-br-lg ${isCustomMode ? "bg-gray-200 hover:bg-gray-300" : "bg-gray-100 cursor-not-allowed"}`}>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Discount Configuration - Collapsible */}
           <div className="mt-4 border-t pt-4">
@@ -838,7 +939,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
             </div>
 
             {discountSectionOpen && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                 {/* VNA Discounts */}
                 <div>
                   <h5 className="w-full text-xs font-medium text-blue-700 mb-2">VNA</h5>
@@ -998,6 +1099,47 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                               [`otherDiscountRT${tier}`]: Math.max(0, parseInt(e.target.value) || 0),
                             }))
                           }
+                          className={`w-12 px-1 py-0.5 border border-gray-300 rounded text-xs ${!isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""} ${getFeeTextColor()}`}
+                          min="0"
+                          disabled={!isCustomMode}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* SUNPQ Discounts row (rendered as part of grid via fragment above is non-trivial; render second row) */}
+            {discountSectionOpen && (
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+                <div>
+                  <h5 className="w-full text-xs font-medium text-orange-700 mb-2">SUNPQ</h5>
+                  <div className="space-y-1">
+                    {[1, 2, 3, 4, 5].map((tier) => (
+                      <div key={tier} className="flex items-center space-x-1">
+                        <span className="text-xs text-gray-600">≥</span>
+                        <input
+                          type="number"
+                          value={(formData as any)[`sunpqThreshold${tier}`] ?? 0}
+                          onChange={(e) => isCustomMode && setFormData((prev: any) => ({ ...prev, [`sunpqThreshold${tier}`]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                          className={`w-14 px-1 py-0.5 border border-gray-300 rounded text-xs ${!isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                          min="0"
+                          disabled={!isCustomMode}
+                        />
+                        <span className="text-xs text-gray-600">trừ</span>
+                        <input
+                          type="number"
+                          value={(formData as any)[`sunpqDiscountOW${tier}`] ?? 0}
+                          onChange={(e) => isCustomMode && setFormData((prev: any) => ({ ...prev, [`sunpqDiscountOW${tier}`]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                          className={`w-12 px-1 py-0.5 border border-gray-300 rounded text-xs ${!isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""} ${getFeeTextColor()}`}
+                          min="0"
+                          disabled={!isCustomMode}
+                        />
+                        <span className="text-xs text-gray-600">/</span>
+                        <input
+                          type="number"
+                          value={(formData as any)[`sunpqDiscountRT${tier}`] ?? 0}
+                          onChange={(e) => isCustomMode && setFormData((prev: any) => ({ ...prev, [`sunpqDiscountRT${tier}`]: Math.max(0, parseInt(e.target.value) || 0) }))}
                           className={`w-12 px-1 py-0.5 border border-gray-300 rounded text-xs ${!isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""} ${getFeeTextColor()}`}
                           min="0"
                           disabled={!isCustomMode}
