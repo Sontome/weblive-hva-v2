@@ -82,4 +82,22 @@ export interface FlightSearchData {
   otherThreshold5: number;
   otherDiscountOW5: number;
   otherDiscountRT5: number;
+  // SunPQ thresholds and discounts (5 tiers)
+  sunpqOneWayFee?: number;
+  sunpqRoundTripFee?: number;
+  sunpqThreshold1?: number;
+  sunpqDiscountOW1?: number;
+  sunpqDiscountRT1?: number;
+  sunpqThreshold2?: number;
+  sunpqDiscountOW2?: number;
+  sunpqDiscountRT2?: number;
+  sunpqThreshold3?: number;
+  sunpqDiscountOW3?: number;
+  sunpqDiscountRT3?: number;
+  sunpqThreshold4?: number;
+  sunpqDiscountOW4?: number;
+  sunpqDiscountRT4?: number;
+  sunpqThreshold5?: number;
+  sunpqDiscountOW5?: number;
+  sunpqDiscountRT5?: number;
 }
