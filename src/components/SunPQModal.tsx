@@ -88,10 +88,10 @@ const generateCopyText = (trip: SunPQTrip, finalPrice: number) => {
   const out = trip.chiều_đi;
   const ret = trip.chiều_về;
   const lines: string[] = [];
-  lines.push(`${out.nơi_đi}-${out.nơi_đến} ${out.giờ_cất_cánh} ngày ${fmtDate(out.ngày_cất_cánh)}`);
-  if (ret) lines.push(`${ret.nơi_đi}-${ret.nơi_đến} ${ret.giờ_cất_cánh} ngày ${fmtDate(ret.ngày_cất_cánh)}`);
-  lines.push(`SunPQ 10kg xách tay,`);
-  lines.push(`20kg ký gửi,`);
+  lines.push(`${buildRouteStr(out)} ${out.giờ_cất_cánh} ngày ${fmtDate(out.ngày_cất_cánh)}`);
+  if (ret) lines.push(`${buildRouteStr(ret)} ${ret.giờ_cất_cánh} ngày ${fmtDate(ret.ngày_cất_cánh)}`);
+  lines.push(`SunPQ 7kg xách tay,`);
+  lines.push(`23kg ký gửi,`);
   lines.push(`giá vé = ${formatPrice(finalPrice)}w`);
   return lines.join('\n');
 };
