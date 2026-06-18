@@ -66,6 +66,24 @@ interface PriceConfig {
   other_threshold_5: number;
   other_discount_ow_5: number;
   other_discount_rt_5: number;
+  // SunPQ (5 tiers + 2 fees)
+  sunpq_one_way_fee: number;
+  sunpq_round_trip_fee: number;
+  sunpq_threshold_1: number;
+  sunpq_discount_ow_1: number;
+  sunpq_discount_rt_1: number;
+  sunpq_threshold_2: number;
+  sunpq_discount_ow_2: number;
+  sunpq_discount_rt_2: number;
+  sunpq_threshold_3: number;
+  sunpq_discount_ow_3: number;
+  sunpq_discount_rt_3: number;
+  sunpq_threshold_4: number;
+  sunpq_discount_ow_4: number;
+  sunpq_discount_rt_4: number;
+  sunpq_threshold_5: number;
+  sunpq_discount_ow_5: number;
+  sunpq_discount_rt_5: number;
 }
 
 const Admin = () => {
@@ -193,6 +211,24 @@ const Admin = () => {
             other_threshold_5: config.other_threshold_5,
             other_discount_ow_5: config.other_discount_ow_5,
             other_discount_rt_5: config.other_discount_rt_5,
+            // SunPQ
+            sunpq_one_way_fee: config.sunpq_one_way_fee,
+            sunpq_round_trip_fee: config.sunpq_round_trip_fee,
+            sunpq_threshold_1: config.sunpq_threshold_1,
+            sunpq_discount_ow_1: config.sunpq_discount_ow_1,
+            sunpq_discount_rt_1: config.sunpq_discount_rt_1,
+            sunpq_threshold_2: config.sunpq_threshold_2,
+            sunpq_discount_ow_2: config.sunpq_discount_ow_2,
+            sunpq_discount_rt_2: config.sunpq_discount_rt_2,
+            sunpq_threshold_3: config.sunpq_threshold_3,
+            sunpq_discount_ow_3: config.sunpq_discount_ow_3,
+            sunpq_discount_rt_3: config.sunpq_discount_rt_3,
+            sunpq_threshold_4: config.sunpq_threshold_4,
+            sunpq_discount_ow_4: config.sunpq_discount_ow_4,
+            sunpq_discount_rt_4: config.sunpq_discount_rt_4,
+            sunpq_threshold_5: config.sunpq_threshold_5,
+            sunpq_discount_ow_5: config.sunpq_discount_ow_5,
+            sunpq_discount_rt_5: config.sunpq_discount_rt_5,
           })
           .eq("id", config.id);
 
@@ -240,7 +276,7 @@ const Admin = () => {
   const renderDiscountTiers = (
     config: PriceConfig, 
     mode: string, 
-    prefix: 'vna' | 'vietjet' | 'other',
+    prefix: 'vna' | 'vietjet' | 'other' | 'sunpq',
     title: string,
     colorClass: string
   ) => {
@@ -256,11 +292,13 @@ const Admin = () => {
             {tiers.map((tier) => (
               <div key={tier} className={`grid grid-cols-4 gap-3 items-end p-3 border rounded-lg ${
                 prefix === 'vna' ? 'bg-blue-50/50' : 
-                prefix === 'vietjet' ? 'bg-red-50/50' : 'bg-gray-50/50'
+                prefix === 'vietjet' ? 'bg-red-50/50' : 
+                prefix === 'sunpq' ? 'bg-orange-50/50' : 'bg-gray-50/50'
               }`}>
                 <div className={`font-medium ${
                   prefix === 'vna' ? 'text-blue-800' : 
-                  prefix === 'vietjet' ? 'text-red-800' : 'text-gray-800'
+                  prefix === 'vietjet' ? 'text-red-800' : 
+                  prefix === 'sunpq' ? 'text-orange-800' : 'text-gray-800'
                 }`}>Mức {tier}</div>
                 <div className="space-y-1">
                   <Label className="text-xs">Ngưỡng giá (VND)</Label>
@@ -350,6 +388,34 @@ const Admin = () => {
 
         {/* Other airlines discounts */}
         {renderDiscountTiers(config, mode, 'other', 'Giảm giá Other Airlines', 'text-gray-700')}
+
+        {/* SunPQ phí + giảm giá */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-orange-700">Phí SunPQ</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Phí 1 chiều SunPQ (VND)</Label>
+                <Input
+                  type="number"
+                  value={config.sunpq_one_way_fee ?? 0}
+                  onChange={(e) => handleConfigChange(mode, "sunpq_one_way_fee", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Khứ hồi SunPQ (VND)</Label>
+                <Input
+                  type="number"
+                  value={config.sunpq_round_trip_fee ?? 0}
+                  onChange={(e) => handleConfigChange(mode, "sunpq_round_trip_fee", e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        {renderDiscountTiers(config, mode, 'sunpq', 'Giảm giá SunPQ', 'text-orange-700')}
       </div>
     );
   };
