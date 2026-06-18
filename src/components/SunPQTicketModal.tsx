@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, X, Plane } from 'lucide-react';
 import { checkSunPQPnr } from '@/services/sunpqService';
 import { toPng } from 'html-to-image';
-import sunpqLogo from '@/assets/sunpq-logo.png.asset.json';
+const sunpqLogo = "/icon/sunpq-logo.png";
 import { Camera } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -80,7 +80,7 @@ const SegmentCard: React.FC<{ seg: Segment }> = ({ seg }) => {
     <div className="border border-orange-200 rounded-lg overflow-hidden mb-3 shadow-sm">
       {/* Header */}
       <div className="bg-orange-100 px-3 py-2 flex items-center justify-between text-sm">
-        <img src={sunpqLogo.url} alt="SUN PhuQuoc" className="h-7 object-contain" crossOrigin="anonymous" />
+        <img src={sunpqLogo} alt="SUN PhuQuoc" className="h-7 object-contain" crossOrigin="anonymous" />
         <div className="font-semibold text-gray-800">
           {fromName} → {toName}
         </div>
