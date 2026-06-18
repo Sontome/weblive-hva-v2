@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { BookingModal } from './BookingModal';
 import { VNABookingModal } from './VNABookingModal';
 import { OtherAirlinesModal } from './OtherAirlinesModal';
+import { SunPQModal, calculateSunPQFinalPrice } from './SunPQModal';
+import type { SunPQTrip } from '@/types/sunpq';
 import { Button } from './ui/button';
 import { useRouteDiscounts } from '@/hooks/useRouteDiscounts';
 import { ChangeTicketModal } from './change-ticket/ChangeTicketModal';
@@ -67,6 +69,7 @@ interface FlightResultsProps {
   results: FlightResult[];
   vjetResults: FlightResult[];
   vnaResults: FlightResult[];
+  sunpqResults?: SunPQTrip[];
   isLoading: boolean;
   selectedAirline: 'all' | 'VJ' | 'VNA';
   selectedFlightType: 'all' | 'direct' | 'connecting';
@@ -151,6 +154,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   results, 
   vjetResults,
   vnaResults,
+  sunpqResults = [],
   isLoading, 
   selectedAirline, 
   selectedFlightType,
@@ -168,6 +172,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   const [vnaBookingModalOpen, setVnaBookingModalOpen] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<FlightResult | null>(null);
   const [otherAirlinesModalOpen, setOtherAirlinesModalOpen] = useState(false);
+  const [sunpqModalOpen, setSunpqModalOpen] = useState(false);
   const { getDiscount: getRouteDiscount } = useRouteDiscounts();
   const [changeTicketOpen, setChangeTicketOpen] = useState(false);
   const [changeTicketFlight, setChangeTicketFlight] = useState<FlightResult | null>(null);
@@ -1043,31 +1048,65 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           Kết quả tìm kiếm ({totalResults} chuyến bay)
         </h3>
         
-        {/* Cheapest Other Airlines Banner */}
-        {cheapestOtherFlight && (
-          <div 
-            onClick={() => setOtherAirlinesModalOpen(true)}
-            className="mb-4 p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <span className="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-bold">OTHER</span>
-                <div>
-                  <p className="text-sm font-medium text-gray-700">
-                    Giá rẻ nhất hãng khác: <span className="font-bold text-yellow-700">{AIRLINE_NAMES[(cheapestOtherFlight['chiều_đi'] as VNAFlightLeg)?.hãng] || (cheapestOtherFlight['chiều_đi'] as VNAFlightLeg)?.hãng}</span>
-                  </p>
-                  <p className="text-lg font-bold text-yellow-600">
-                    {formatPriceForDisplay(calculateFinalPrice(cheapestOtherFlight['thông_tin_chung'].giá_vé, cheapestOtherFlight))} KRW
-                  </p>
+        {/* OTHER + SUNPQ banner row */}
+        {(cheapestOtherFlight || sunpqResults.length > 0) && (
+          <div className="mb-4 flex flex-col md:flex-row gap-3">
+            {cheapestOtherFlight && (
+              <div
+                onClick={() => setOtherAirlinesModalOpen(true)}
+                className="flex-1 p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <span className="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-bold">OTHER</span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">
+                        Giá rẻ nhất hãng khác: <span className="font-bold text-yellow-700">{AIRLINE_NAMES[(cheapestOtherFlight['chiều_đi'] as VNAFlightLeg)?.hãng] || (cheapestOtherFlight['chiều_đi'] as VNAFlightLeg)?.hãng}</span>
+                      </p>
+                      <p className="text-lg font-bold text-yellow-600">
+                        {formatPriceForDisplay(calculateFinalPrice(cheapestOtherFlight['thông_tin_chung'].giá_vé, cheapestOtherFlight))} KRW
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-yellow-600 flex items-center text-sm font-medium">
+                    Xem {otherAirlinesFlights.length} vé →
+                  </div>
                 </div>
               </div>
-              <div className="text-yellow-600 flex items-center text-sm font-medium">
-                Xem {otherAirlinesFlights.length} vé hãng khác →
-              </div>
-            </div>
+            )}
+            {sunpqResults.length > 0 && (() => {
+              const cheapest = [...sunpqResults].sort((a, b) => {
+                const ap = Number((a.thông_tin_chung as any)?.giá_vé ?? (a.chiều_đi?.giá_vé_gốc || 0) + (a.chiều_về?.giá_vé_gốc || 0));
+                const bp = Number((b.thông_tin_chung as any)?.giá_vé ?? (b.chiều_đi?.giá_vé_gốc || 0) + (b.chiều_về?.giá_vé_gốc || 0));
+                return ap - bp;
+              })[0];
+              const base = Number((cheapest.thông_tin_chung as any)?.giá_vé ?? (cheapest.chiều_đi?.giá_vé_gốc || 0) + (cheapest.chiều_về?.giá_vé_gốc || 0));
+              const finalPrice = calculateSunPQFinalPrice(base, searchData?.tripType || 'OW', searchData as any);
+              const seats = (cheapest.thông_tin_chung as any)?.số_ghế_còn ?? '9';
+              return (
+                <div
+                  onClick={() => setSunpqModalOpen(true)}
+                  className="flex-1 p-3 bg-orange-50 border-2 border-orange-400 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span className="bg-orange-500 text-white px-2 py-1 rounded text-sm font-bold">SUNPQ</span>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Giá rẻ nhất:</p>
+                        <p className="text-lg font-bold text-orange-600">{formatPriceForDisplay(finalPrice)} KRW</p>
+                        <p className="text-xs text-gray-600">Còn {seats} ghế</p>
+                      </div>
+                    </div>
+                    <div className="text-orange-600 flex items-center text-sm font-medium">
+                      Xem {sunpqResults.length} vé SunPQ →
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* VietJet Column */}
           <div>
@@ -1121,6 +1160,12 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           otherFlights={otherAirlinesFlights}
           searchData={searchData}
           onBookingSuccess={onVJBookingSuccess}
+        />
+        <SunPQModal
+          isOpen={sunpqModalOpen}
+          onClose={() => setSunpqModalOpen(false)}
+          flights={sunpqResults}
+          searchData={searchData as any}
         />
 
         {/* Booking Modal for two-column view */}
@@ -1221,28 +1266,62 @@ const FlightResults: React.FC<FlightResultsProps> = ({
         Kết quả tìm kiếm ({singleColumnResults.length} chuyến bay)
       </h3>
 
-      {/* Cheapest Other Airlines Banner for VNA view */}
-      {selectedAirline === 'VNA' && cheapestOtherFlight && (
-        <div 
-          onClick={() => setOtherAirlinesModalOpen(true)}
-          className="mb-4 p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <span className="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-bold">OTHER</span>
-              <div>
-                <p className="text-sm font-medium text-gray-700">
-                  Giá rẻ nhất hãng khác: <span className="font-bold text-yellow-700">{AIRLINE_NAMES[(cheapestOtherFlight['chiều_đi'] as VNAFlightLeg)?.hãng] || (cheapestOtherFlight['chiều_đi'] as VNAFlightLeg)?.hãng}</span>
-                </p>
-                <p className="text-lg font-bold text-yellow-600">
-                  {formatPriceForDisplay(calculateFinalPrice(cheapestOtherFlight['thông_tin_chung'].giá_vé, cheapestOtherFlight))} KRW
-                </p>
+      {/* OTHER + SUNPQ row for VNA view */}
+      {selectedAirline === 'VNA' && (cheapestOtherFlight || sunpqResults.length > 0) && (
+        <div className="mb-4 flex flex-col md:flex-row gap-3">
+          {cheapestOtherFlight && (
+            <div
+              onClick={() => setOtherAirlinesModalOpen(true)}
+              className="flex-1 p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <span className="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-bold">OTHER</span>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">
+                      Giá rẻ nhất hãng khác: <span className="font-bold text-yellow-700">{AIRLINE_NAMES[(cheapestOtherFlight['chiều_đi'] as VNAFlightLeg)?.hãng] || (cheapestOtherFlight['chiều_đi'] as VNAFlightLeg)?.hãng}</span>
+                    </p>
+                    <p className="text-lg font-bold text-yellow-600">
+                      {formatPriceForDisplay(calculateFinalPrice(cheapestOtherFlight['thông_tin_chung'].giá_vé, cheapestOtherFlight))} KRW
+                    </p>
+                  </div>
+                </div>
+                <div className="text-yellow-600 flex items-center text-sm font-medium">
+                  Xem {otherAirlinesFlights.length} vé →
+                </div>
               </div>
             </div>
-            <div className="text-yellow-600 flex items-center text-sm font-medium">
-              Xem {otherAirlinesFlights.length} vé hãng khác →
-            </div>
-          </div>
+          )}
+          {sunpqResults.length > 0 && (() => {
+            const cheapest = [...sunpqResults].sort((a, b) => {
+              const ap = Number((a.thông_tin_chung as any)?.giá_vé ?? (a.chiều_đi?.giá_vé_gốc || 0) + (a.chiều_về?.giá_vé_gốc || 0));
+              const bp = Number((b.thông_tin_chung as any)?.giá_vé ?? (b.chiều_đi?.giá_vé_gốc || 0) + (b.chiều_về?.giá_vé_gốc || 0));
+              return ap - bp;
+            })[0];
+            const base = Number((cheapest.thông_tin_chung as any)?.giá_vé ?? (cheapest.chiều_đi?.giá_vé_gốc || 0) + (cheapest.chiều_về?.giá_vé_gốc || 0));
+            const finalPrice = calculateSunPQFinalPrice(base, searchData?.tripType || 'OW', searchData as any);
+            const seats = (cheapest.thông_tin_chung as any)?.số_ghế_còn ?? '9';
+            return (
+              <div
+                onClick={() => setSunpqModalOpen(true)}
+                className="flex-1 p-3 bg-orange-50 border-2 border-orange-400 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <span className="bg-orange-500 text-white px-2 py-1 rounded text-sm font-bold">SUNPQ</span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Giá rẻ nhất:</p>
+                      <p className="text-lg font-bold text-orange-600">{formatPriceForDisplay(finalPrice)} KRW</p>
+                      <p className="text-xs text-gray-600">Còn {seats} ghế</p>
+                    </div>
+                  </div>
+                  <div className="text-orange-600 flex items-center text-sm font-medium">
+                    Xem {sunpqResults.length} vé SunPQ →
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
       
@@ -1266,6 +1345,12 @@ const FlightResults: React.FC<FlightResultsProps> = ({
         otherFlights={otherAirlinesFlights}
         searchData={searchData}
         onBookingSuccess={onVJBookingSuccess}
+      />
+      <SunPQModal
+        isOpen={sunpqModalOpen}
+        onClose={() => setSunpqModalOpen(false)}
+        flights={sunpqResults}
+        searchData={searchData as any}
       />
 
       {/* Booking Modals */}
