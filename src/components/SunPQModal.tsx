@@ -9,6 +9,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SunPQTrip, SunPQBookingPayload, SunPQPassenger, SunPQPaxType } from '@/types/sunpq';
 import { bookingSunPQ, checkSunPQPnr } from '@/services/sunpqService';
+import SunPQTicketModal from './SunPQTicketModal';
 
 interface SearchDataLike {
   tripType: 'OW' | 'RT';
@@ -116,7 +117,8 @@ const SunPQBookingForm: React.FC<{
   children: number;
   infants: number;
   onClose: () => void;
-}> = ({ trip, tripType, adults, children, infants, onClose }) => {
+  onSuccess?: (pnr: string) => void;
+}> = ({ trip, tripType, adults, children, infants, onClose, onSuccess }) => {
   const init: PaxRow[] = [];
   for (let i = 0; i < adults; i++) init.push({ type: 'ADULT', last_name: '', first_name: '', title: 'MR', date_of_birth: '', parent_id: null });
   for (let i = 0; i < children; i++) init.push({ type: 'CHILD', last_name: '', first_name: '', title: 'MSTR', date_of_birth: '', parent_id: null });
@@ -184,9 +186,12 @@ const SunPQBookingForm: React.FC<{
       if (!res.success || !res.pnr) {
         throw new Error(res.message || 'Không thể giữ vé SunPQ. Vui lòng thử lại.');
       }
-      const pnrData = await checkSunPQPnr(res.pnr).catch((e) => ({ error: e?.message }));
-      setSuccess({ pnr: res.pnr, data: pnrData });
       toast.success(`Giữ vé thành công: ${res.pnr}`);
+      if (onSuccess) {
+        onSuccess(res.pnr);
+        return;
+      }
+      setSuccess({ pnr: res.pnr, data: null });
     } catch (e: any) {
       toast.error(e?.message || 'Không thể giữ vé SunPQ. Vui lòng thử lại.');
     } finally {
@@ -289,6 +294,7 @@ export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchDa
     [flights],
   );
   const [bookingTrip, setBookingTrip] = useState<SunPQTrip | null>(null);
+  const [ticketPNR, setTicketPNR] = useState<string | null>(null);
 
   return (
     <>
@@ -370,9 +376,18 @@ export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchDa
               children={searchData?.children ?? 0}
               infants={searchData?.infants ?? 0}
               onClose={() => setBookingTrip(null)}
+              onSuccess={(pnr) => { setBookingTrip(null); setTicketPNR(pnr); }}
             />
           </DialogContent>
         </Dialog>
+      )}
+
+      {ticketPNR && (
+        <SunPQTicketModal
+          isOpen={!!ticketPNR}
+          onClose={() => setTicketPNR(null)}
+          initialPNR={ticketPNR}
+        />
       )}
     </>
   );
