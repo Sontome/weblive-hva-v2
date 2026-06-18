@@ -14,6 +14,7 @@ import { RepriceModal } from '../components/RepriceModal';
 import { VJTicketModal } from '../components/VJTicketModal';
 import { VNATicketModal } from '../components/VNATicketModal';
 import { OtherTicketModal } from '../components/OtherTicketModal';
+import { SunPQTicketModal } from '../components/SunPQTicketModal';
 import { AddPNRModal } from '../components/AddPNRModal';
 import { CurrentOnlineStatus } from '../components/attendance/CurrentOnlineStatus';
 import { EmployeeIdentityBadge } from '../components/attendance/EmployeeIdentityBadge';
@@ -95,6 +96,7 @@ const Index = () => {
   const [allResults, setAllResults] = useState([]); // Store all results for filtering
   const [vjetResults, setVjetResults] = useState([]);
   const [vnaResults, setVnaResults] = useState([]);
+  const [sunpqResults, setSunpqResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAirline, setSelectedAirline] = useState<'all' | 'VJ' | 'VNA'>('all');
   const [selectedFlightType, setSelectedFlightType] = useState<'all' | 'direct' | 'connecting'>('all');
@@ -116,6 +118,7 @@ const Index = () => {
   const [showVNATicketModal, setShowVNATicketModal] = useState(false);
   const [vnaTicketInitialPNR, setVnaTicketInitialPNR] = useState<string | undefined>(undefined);
   const [showOtherTicketModal, setShowOtherTicketModal] = useState(false);
+  const [showSunPQTicketModal, setShowSunPQTicketModal] = useState(false);
   const [showAddPNRModal, setShowAddPNRModal] = useState(false);
   const [onlineRefreshKey, setOnlineRefreshKey] = useState(0);
   
@@ -232,6 +235,7 @@ const Index = () => {
     setAllResults([]);
     setVjetResults([]);
     setVnaResults([]);
+    setSunpqResults([]);
     setSearchData(searchData);
     setLastSearchData(searchData);
     setApiStatus({ vj: 'pending', vna: 'pending' });
@@ -245,7 +249,7 @@ const Index = () => {
     fetchLowFareData(searchData);
 
     let completedAPIs = 0;
-    const totalAPIs = 2;
+    const totalAPIs = 3;
 
     const checkIfShouldStopLoading = () => {
       completedAPIs++;
@@ -350,8 +354,19 @@ const Index = () => {
       checkIfShouldStopLoading();
     };
 
+    const onSunPQResult = (result: any) => {
+      console.log('=== SUNPQ RESULT DEBUG ===', result);
+      if (result.status_code === 200 && result.body && result.body.length > 0) {
+        setSunpqResults(result.body);
+        toast.success(`Tìm thấy ${result.body.length} chuyến bay SunPQ`);
+      } else {
+        setSunpqResults([]);
+      }
+      checkIfShouldStopLoading();
+    };
+
     try {
-      await searchAllFlights(searchData, onVietJetResult, onVNAResult);
+      await searchAllFlights(searchData, onVietJetResult, onVNAResult, onSunPQResult);
     } catch (error) {
       console.error('Search error:', error);
       toast.error('Có lỗi xảy ra khi tìm kiếm chuyến bay');
@@ -445,6 +460,10 @@ const Index = () => {
         isOpen={showOtherTicketModal}
         onClose={() => setShowOtherTicketModal(false)}
       />
+      <SunPQTicketModal
+        isOpen={showSunPQTicketModal}
+        onClose={() => setShowSunPQTicketModal(false)}
+      />
       <AddPNRModal
         isOpen={showAddPNRModal}
         onClose={() => setShowAddPNRModal(false)}
@@ -498,6 +517,14 @@ const Index = () => {
               className="px-2 sm:px-5 text-xs sm:text-sm"
             >
               🎫 Vé Other
+            </Button>
+            <Button
+              onClick={() => setShowSunPQTicketModal(true)}
+              variant="action-ticket"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              🎫 Vé SunPQ
             </Button>
             <Button
               onClick={() => setShowRepriceModal(true)}
@@ -575,6 +602,7 @@ const Index = () => {
           results={searchResults} 
           vjetResults={vjetResults}
           vnaResults={vnaResults}
+          sunpqResults={sunpqResults}
           isLoading={isLoading}
           selectedAirline={selectedAirline}
           selectedFlightType={selectedFlightType}
