@@ -3,6 +3,7 @@ import { FlightSearchData } from '../types/flight';
 import { shouldSkipVietjet } from '../utils/flightValidation';
 import { searchVietJetFlights } from './vietjetService';
 import { searchVietnamAirlinesFlights } from './vietnamAirlinesService';
+import { searchSunPQFlights } from './sunpqService';
 
 // Keep the original function names for backward compatibility
 export const searchFlights = searchVietJetFlights;
@@ -11,7 +12,8 @@ export const searchVNAFlights = searchVietnamAirlinesFlights;
 export const searchAllFlights = async (
   searchData: FlightSearchData,
   onVietJetResult?: (results: any) => void,
-  onVNAResult?: (results: any) => void
+  onVNAResult?: (results: any) => void,
+  onSunPQResult?: (results: any) => void
 ) => {
   console.log('Starting flight search with priority for direct flights');
   
@@ -86,9 +88,25 @@ export const searchAllFlights = async (
     }
   };
 
-  // Search both airlines simultaneously
+  // Search SunPQ in parallel; never break the rest
+  const searchSunPQ = async () => {
+    if (!onSunPQResult) return;
+    try {
+      const r = await searchSunPQFlights(searchData);
+      if (r.status_code === 200 && r.body.length > 0) {
+        onSunPQResult({ status_code: 200, body: r.body, airline: 'SUNPQ' });
+      } else {
+        onSunPQResult({ status_code: r.status_code || 404, body: [], airline: 'SUNPQ', error: r.error || 'Không có vé SunPQ' });
+      }
+    } catch (e: any) {
+      onSunPQResult({ status_code: 500, body: [], airline: 'SUNPQ', error: e?.message || 'SunPQ error' });
+    }
+  };
+
+  // Search all airlines simultaneously
   await Promise.all([
     searchWithFallback(searchVietJetFlights, 'VietJet', onVietJetResult),
-    searchWithFallback(searchVietnamAirlinesFlights, 'Vietnam Airlines', onVNAResult)
+    searchWithFallback(searchVietnamAirlinesFlights, 'Vietnam Airlines', onVNAResult),
+    searchSunPQ(),
   ]);
 };
