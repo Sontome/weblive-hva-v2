@@ -157,6 +157,23 @@ export type Database = {
           round_trip_fee_other: number
           round_trip_fee_vietjet: number
           round_trip_fee_vna: number
+          sunpq_discount_ow_1: number
+          sunpq_discount_ow_2: number
+          sunpq_discount_ow_3: number
+          sunpq_discount_ow_4: number
+          sunpq_discount_ow_5: number
+          sunpq_discount_rt_1: number
+          sunpq_discount_rt_2: number
+          sunpq_discount_rt_3: number
+          sunpq_discount_rt_4: number
+          sunpq_discount_rt_5: number
+          sunpq_one_way_fee: number
+          sunpq_round_trip_fee: number
+          sunpq_threshold_1: number
+          sunpq_threshold_2: number
+          sunpq_threshold_3: number
+          sunpq_threshold_4: number
+          sunpq_threshold_5: number
           updated_at: string
           vietjet_discount_ow_1: number
           vietjet_discount_ow_2: number
@@ -212,6 +229,23 @@ export type Database = {
           round_trip_fee_other?: number
           round_trip_fee_vietjet?: number
           round_trip_fee_vna?: number
+          sunpq_discount_ow_1?: number
+          sunpq_discount_ow_2?: number
+          sunpq_discount_ow_3?: number
+          sunpq_discount_ow_4?: number
+          sunpq_discount_ow_5?: number
+          sunpq_discount_rt_1?: number
+          sunpq_discount_rt_2?: number
+          sunpq_discount_rt_3?: number
+          sunpq_discount_rt_4?: number
+          sunpq_discount_rt_5?: number
+          sunpq_one_way_fee?: number
+          sunpq_round_trip_fee?: number
+          sunpq_threshold_1?: number
+          sunpq_threshold_2?: number
+          sunpq_threshold_3?: number
+          sunpq_threshold_4?: number
+          sunpq_threshold_5?: number
           updated_at?: string
           vietjet_discount_ow_1?: number
           vietjet_discount_ow_2?: number
@@ -267,6 +301,23 @@ export type Database = {
           round_trip_fee_other?: number
           round_trip_fee_vietjet?: number
           round_trip_fee_vna?: number
+          sunpq_discount_ow_1?: number
+          sunpq_discount_ow_2?: number
+          sunpq_discount_ow_3?: number
+          sunpq_discount_ow_4?: number
+          sunpq_discount_ow_5?: number
+          sunpq_discount_rt_1?: number
+          sunpq_discount_rt_2?: number
+          sunpq_discount_rt_3?: number
+          sunpq_discount_rt_4?: number
+          sunpq_discount_rt_5?: number
+          sunpq_one_way_fee?: number
+          sunpq_round_trip_fee?: number
+          sunpq_threshold_1?: number
+          sunpq_threshold_2?: number
+          sunpq_threshold_3?: number
+          sunpq_threshold_4?: number
+          sunpq_threshold_5?: number
           updated_at?: string
           vietjet_discount_ow_1?: number
           vietjet_discount_ow_2?: number
