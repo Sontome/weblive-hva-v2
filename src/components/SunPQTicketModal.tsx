@@ -121,6 +121,17 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 50);
   }, [isOpen]);
 
+  // Auto-submit when opened with an initial PNR
+  useEffect(() => {
+    if (isOpen && initialPNR && initialPNR.trim() && !data && !isLoading) {
+      setPnr(initialPNR.trim().toUpperCase());
+      // defer to next tick so state is set
+      const t = setTimeout(() => { handleSubmit(); }, 0);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialPNR]);
+
   const reset = () => {
     setPnr('');
     setData(null);
