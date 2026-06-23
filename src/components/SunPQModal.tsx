@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Plane, Users, Copy } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
@@ -8,11 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SunPQTrip, SunPQBookingPayload, SunPQPassenger, SunPQPaxType } from '@/types/sunpq';
-import { bookingSunPQ, checkSunPQPnr } from '@/services/sunpqService';
+import { bookingSunPQ, checkSunPQPnr, searchSunPQFlights } from '@/services/sunpqService';
 import SunPQTicketModal from './SunPQTicketModal';
+import LowFareChart from './LowFareChart';
 
 interface SearchDataLike {
   tripType: 'OW' | 'RT';
+  departure?: string;
+  arrival?: string;
   departureDate?: string;
   returnDate?: string;
   adults?: number;
@@ -33,6 +36,7 @@ interface Props {
   onClose: () => void;
   flights: SunPQTrip[];
   searchData: SearchDataLike | null;
+  lowerFare?: { chiều_đi?: any[]; chiều_về?: any[]; currency?: string } | null;
 }
 
 const formatPrice = (price: number) => {
@@ -287,14 +291,75 @@ const SunPQBookingForm: React.FC<{
 };
 
 // ----- Main Modal -----
-export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchData }) => {
+export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchData, lowerFare }) => {
+  const [currentFlights, setCurrentFlights] = useState<SunPQTrip[]>(flights);
+  const [currentLowerFare, setCurrentLowerFare] = useState(lowerFare || null);
+  const [currentDep, setCurrentDep] = useState<string>(searchData?.departureDate || '');
+  const [currentRet, setCurrentRet] = useState<string>(searchData?.returnDate || '');
+  const [isResearching, setIsResearching] = useState(false);
+
+  useEffect(() => { setCurrentFlights(flights); }, [flights]);
+  useEffect(() => { setCurrentLowerFare(lowerFare || null); }, [lowerFare]);
+  useEffect(() => {
+    setCurrentDep(searchData?.departureDate || '');
+    setCurrentRet(searchData?.returnDate || '');
+  }, [searchData?.departureDate, searchData?.returnDate]);
+
   const tripType = searchData?.tripType || 'OW';
   const sorted = useMemo(
-    () => [...flights].sort((a, b) => getBasePrice(a) - getBasePrice(b)),
-    [flights],
+    () => [...currentFlights].sort((a, b) => getBasePrice(a) - getBasePrice(b)),
+    [currentFlights],
   );
   const [bookingTrip, setBookingTrip] = useState<SunPQTrip | null>(null);
   const [ticketPNR, setTicketPNR] = useState<string | null>(null);
+
+  const currency = currentLowerFare?.currency || 'KRW';
+  const formatLowFarePrice = (v: number) => {
+    if (currency === 'KRW') {
+      const r = Math.round(v / 100) * 100;
+      return new Intl.NumberFormat('de-DE').format(r) + '₩';
+    }
+    try {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(v);
+    } catch {
+      return new Intl.NumberFormat('vi-VN').format(v) + ' ' + currency;
+    }
+  };
+
+  const handleResearchLowFare = async (departureDate: string, returnDate: string) => {
+    if (!searchData?.departure || !searchData?.arrival) {
+      toast.error('Thiếu thông tin tuyến bay để tìm lại');
+      return;
+    }
+    setIsResearching(true);
+    try {
+      const newSearch: any = {
+        departure: searchData.departure,
+        arrival: searchData.arrival,
+        departureDate,
+        returnDate: returnDate || departureDate,
+        tripType: returnDate ? 'RT' : 'OW',
+        adults: searchData.adults ?? 1,
+        children: searchData.children ?? 0,
+        infants: searchData.infants ?? 0,
+      };
+      const res = await searchSunPQFlights(newSearch);
+      setCurrentLowerFare((res.lowerfare as any) || null);
+      if (res.status_code === 200 && res.body.length > 0) {
+        setCurrentFlights(res.body);
+        setCurrentDep(departureDate);
+        setCurrentRet(returnDate || '');
+        toast.success(`Tìm thấy ${res.body.length} chuyến bay SunPQ`);
+      } else {
+        setCurrentFlights([]);
+        toast.info('Không có vé SunPQ cho ngày đã chọn');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Lỗi tìm kiếm lại SunPQ');
+    } finally {
+      setIsResearching(false);
+    }
+  };
 
   return (
     <>
@@ -306,6 +371,34 @@ export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchDa
               SunPQ ({sorted.length} chuyến bay)
             </DialogTitle>
           </DialogHeader>
+          {currentLowerFare && (() => {
+            const lfAny = currentLowerFare as any;
+            const depRaw: any[] = lfAny['chiều_đi'] || lfAny['chiều đi'] || [];
+            const retRaw: any[] = lfAny['chiều_về'] || lfAny['chiều về'] || [];
+            const norm = (arr: any[]) => arr.map(d => ({
+              ngày: d['ngày'] || d['ngay'],
+              giá_vé_gốc: Number(d['giá_vé_gốc'] ?? d['gia_ve_goc'] ?? 0),
+              loại_vé: d['loại_vé'] || '',
+            }));
+            const dep = norm(depRaw);
+            const ret = norm(retRaw);
+            if (dep.length === 0 && ret.length === 0) return null;
+            return (
+            <div className="mt-3">
+              <LowFareChart
+                departureData={dep}
+                returnData={ret}
+                tripType={tripType}
+                onSearchWithDates={handleResearchLowFare}
+                isLoading={isResearching}
+                initialDepartureDate={currentDep}
+                initialReturnDate={currentRet}
+                title="Giá rẻ theo tháng (SunPQ)"
+                formatPrice={formatLowFarePrice}
+              />
+            </div>
+            );
+          })()}
           <div className="space-y-3 mt-3">
             {sorted.length === 0 && (
               <div className="text-center text-gray-500 py-6">Không có vé SunPQ</div>
