@@ -594,6 +594,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_checkout_all: { Args: never; Returns: number }
       cancel_support_request: {
         Args: { p_request_id: string }
         Returns: undefined
