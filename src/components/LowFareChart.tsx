@@ -24,6 +24,8 @@ interface LowFareChartProps {
   isLoading?: boolean;
   initialDepartureDate?: string; // yyyy-MM-dd format
   initialReturnDate?: string; // yyyy-MM-dd format
+  title?: string;
+  formatPrice?: (value: number) => string;
 }
 
 const formatVND = (value: number) => {
@@ -82,7 +84,8 @@ const SingleChart: React.FC<{
   disabledBefore?: string;
   minPrice: number;
   maxPrice: number;
-}> = ({ data, label, selectedDate, onSelectDate, disabledBefore, minPrice, maxPrice }) => {
+  formatPrice: (n: number) => string;
+}> = ({ data, label, selectedDate, onSelectDate, disabledBefore, minPrice, maxPrice, formatPrice }) => {
   if (!data || data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-20 text-gray-400">
@@ -141,7 +144,7 @@ const SingleChart: React.FC<{
                 <TooltipContent side="top" className="bg-gray-900 text-white">
                   <div className="text-center">
                     <div className="font-semibold">{day.ngày}</div>
-                    <div className="text-yellow-300 font-bold">{formatVND(day.giá_vé_gốc)}</div>
+                    <div className="text-yellow-300 font-bold">{formatPrice(day.giá_vé_gốc)}</div>
                     <div className="text-xs text-gray-300">{day.loại_vé}</div>
                   </div>
                 </TooltipContent>
@@ -169,6 +172,8 @@ const LowFareChart: React.FC<LowFareChartProps> = ({
   isLoading = false,
   initialDepartureDate,
   initialReturnDate,
+  title = 'Giá rẻ theo tháng (VietJet)',
+  formatPrice = formatVND,
 }) => {
   // Pre-select initial dates
   const [selectedDepartureDate, setSelectedDepartureDate] = useState<string | null>(
@@ -294,7 +299,7 @@ const LowFareChart: React.FC<LowFareChartProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <TrendingDown className="w-5 h-5 text-green-600" />
-          <h3 className="text-lg font-semibold text-gray-800">Giá rẻ theo tháng (VietJet)</h3>
+          <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
         </div>
         
         {cheapestCombo && (
@@ -306,7 +311,7 @@ const LowFareChart: React.FC<LowFareChartProps> = ({
             <span>
               Combo rẻ nhất: {cheapestCombo.departure.ngày}
               {cheapestCombo.return && ` → ${cheapestCombo.return.ngày}`}
-              {' '}({formatVND(cheapestCombo.total)})
+              {' '}({formatPrice(cheapestCombo.total)})
             </span>
           </button>
         )}
@@ -321,6 +326,7 @@ const LowFareChart: React.FC<LowFareChartProps> = ({
           onSelectDate={handleDepartureDateSelect}
           minPrice={depMin}
           maxPrice={depMax}
+          formatPrice={formatPrice}
         />
 
         {/* Return chart (only for round trip) */}
@@ -333,6 +339,7 @@ const LowFareChart: React.FC<LowFareChartProps> = ({
             disabledBefore={selectedDepartureDate || undefined}
             minPrice={retMin}
             maxPrice={retMax}
+            formatPrice={formatPrice}
           />
         )}
       </div>
