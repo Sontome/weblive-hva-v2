@@ -94,9 +94,9 @@ export const searchAllFlights = async (
     try {
       const r = await searchSunPQFlights(searchData);
       if (r.status_code === 200 && r.body.length > 0) {
-        onSunPQResult({ status_code: 200, body: r.body, airline: 'SUNPQ' });
+        onSunPQResult({ status_code: 200, body: r.body, lowerfare: r.lowerfare, airline: 'SUNPQ' });
       } else {
-        onSunPQResult({ status_code: r.status_code || 404, body: [], airline: 'SUNPQ', error: r.error || 'Không có vé SunPQ' });
+        onSunPQResult({ status_code: r.status_code || 404, body: [], lowerfare: r.lowerfare, airline: 'SUNPQ', error: r.error || 'Không có vé SunPQ' });
       }
     } catch (e: any) {
       onSunPQResult({ status_code: 500, body: [], airline: 'SUNPQ', error: e?.message || 'SunPQ error' });
