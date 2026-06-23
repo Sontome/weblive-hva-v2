@@ -70,6 +70,7 @@ interface FlightResultsProps {
   vjetResults: FlightResult[];
   vnaResults: FlightResult[];
   sunpqResults?: SunPQTrip[];
+  sunpqLowerFare?: any;
   isLoading: boolean;
   selectedAirline: 'all' | 'VJ' | 'VNA';
   selectedFlightType: 'all' | 'direct' | 'connecting';
@@ -155,6 +156,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   vjetResults,
   vnaResults,
   sunpqResults = [],
+  sunpqLowerFare = null,
   isLoading, 
   selectedAirline, 
   selectedFlightType,
@@ -1166,6 +1168,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           onClose={() => setSunpqModalOpen(false)}
           flights={sunpqResults}
           searchData={searchData as any}
+          lowerFare={sunpqLowerFare}
         />
 
         {/* Booking Modal for two-column view */}
@@ -1351,6 +1354,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
         onClose={() => setSunpqModalOpen(false)}
         flights={sunpqResults}
         searchData={searchData as any}
+        lowerFare={sunpqLowerFare}
       />
 
       {/* Booking Modals */}
