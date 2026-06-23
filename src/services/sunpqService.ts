@@ -11,6 +11,7 @@ const logTag = (tag: string, payload: any) => {
 export interface SunPQSearchResult {
   status_code: number;
   body: SunPQTrip[];
+  lowerfare?: { chiều_đi: any[]; chiều_về: any[]; currency?: string } | null;
   error?: string;
 }
 
@@ -42,7 +43,8 @@ export const searchSunPQFlights = async (searchData: FlightSearchData): Promise<
     const data: SunPQSearchResponse = await res.json();
     logTag('SUNPQ_SEARCH_RESPONSE', { total: data.total_count ?? data.data?.body?.length });
     const list = data.data?.body ?? data.body ?? [];
-    return { status_code: data.success ? 200 : 404, body: list };
+    const lf = (data as any)?.data?.lowerfare ?? (data as any)?.lowerfare ?? null;
+    return { status_code: data.success ? 200 : 404, body: list, lowerfare: lf };
   } catch (err: any) {
     logTag('SUNPQ_SEARCH_EXCEPTION', err?.message || String(err));
     return { status_code: 500, body: [], error: err?.message || 'Network error' };
