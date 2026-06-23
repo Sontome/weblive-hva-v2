@@ -97,6 +97,7 @@ const Index = () => {
   const [vjetResults, setVjetResults] = useState([]);
   const [vnaResults, setVnaResults] = useState([]);
   const [sunpqResults, setSunpqResults] = useState<any[]>([]);
+  const [sunpqLowerFare, setSunpqLowerFare] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAirline, setSelectedAirline] = useState<'all' | 'VJ' | 'VNA'>('all');
   const [selectedFlightType, setSelectedFlightType] = useState<'all' | 'direct' | 'connecting'>('all');
@@ -236,6 +237,7 @@ const Index = () => {
     setVjetResults([]);
     setVnaResults([]);
     setSunpqResults([]);
+    setSunpqLowerFare(null);
     setSearchData(searchData);
     setLastSearchData(searchData);
     setApiStatus({ vj: 'pending', vna: 'pending' });
@@ -356,6 +358,7 @@ const Index = () => {
 
     const onSunPQResult = (result: any) => {
       console.log('=== SUNPQ RESULT DEBUG ===', result);
+      setSunpqLowerFare(result?.lowerfare || null);
       if (result.status_code === 200 && result.body && result.body.length > 0) {
         setSunpqResults(result.body);
         toast.success(`Tìm thấy ${result.body.length} chuyến bay SunPQ`);
@@ -603,6 +606,7 @@ const Index = () => {
           vjetResults={vjetResults}
           vnaResults={vnaResults}
           sunpqResults={sunpqResults}
+          sunpqLowerFare={sunpqLowerFare}
           isLoading={isLoading}
           selectedAirline={selectedAirline}
           selectedFlightType={selectedFlightType}
