@@ -95,6 +95,25 @@ export async function saveHeldTicket(payload: HoldTicketPayload): Promise<HeldTi
   };
   const expireIso = normalizeExpire(payload.expire_date);
 
+  // Normalize departure_date -> 'YYYY-MM-DD' (accept DD/MM/YYYY, DD-MM-YYYY, or ISO)
+  const normalizeDate = (raw: string | null | undefined): string => {
+    if (!raw || typeof raw !== 'string') return '';
+    const s = raw.trim();
+    const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (iso) {
+      const [, y, m, d] = iso;
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+    const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (dmy) {
+      let [, d, m, y] = dmy;
+      let yy = parseInt(y);
+      if (yy < 100) yy += 2000;
+      return `${yy}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+    return s;
+  };
+
   const { data: existing } = await supabase
     .from('held_tickets')
     .select('id')
@@ -128,7 +147,7 @@ export async function saveHeldTicket(payload: HoldTicketPayload): Promise<HeldTi
       segment_order: i + 1,
       departure_airport: seg.departure_airport,
       arrival_airport: seg.arrival_airport,
-      departure_date: seg.departure_date,
+      departure_date: normalizeDate(seg.departure_date),
       departure_time: seg.departure_time,
       trip: seg.trip,
     }));
