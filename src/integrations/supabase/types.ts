@@ -133,6 +133,98 @@ export type Database = {
           },
         ]
       }
+      held_ticket_segments: {
+        Row: {
+          arrival_airport: string
+          created_at: string
+          departure_airport: string
+          departure_date: string
+          departure_time: string
+          held_ticket_id: string
+          id: string
+          segment_order: number
+          trip: string
+        }
+        Insert: {
+          arrival_airport: string
+          created_at?: string
+          departure_airport: string
+          departure_date: string
+          departure_time: string
+          held_ticket_id: string
+          id?: string
+          segment_order: number
+          trip: string
+        }
+        Update: {
+          arrival_airport?: string
+          created_at?: string
+          departure_airport?: string
+          departure_date?: string
+          departure_time?: string
+          held_ticket_id?: string
+          id?: string
+          segment_order?: number
+          trip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "held_ticket_segments_held_ticket_id_fkey"
+            columns: ["held_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "held_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      held_tickets: {
+        Row: {
+          airline: string
+          created_at: string
+          expire_date: string | null
+          hold_date: string
+          id: string
+          namelist: string[]
+          number_person: number
+          payment_status: boolean
+          pnr: string
+          ticket_status: string
+          total_price: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          airline: string
+          created_at?: string
+          expire_date?: string | null
+          hold_date?: string
+          id?: string
+          namelist?: string[]
+          number_person?: number
+          payment_status?: boolean
+          pnr: string
+          ticket_status?: string
+          total_price?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          airline?: string
+          created_at?: string
+          expire_date?: string | null
+          hold_date?: string
+          id?: string
+          namelist?: string[]
+          number_person?: number
+          payment_status?: boolean
+          pnr?: string
+          ticket_status?: string
+          total_price?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       price_configs: {
         Row: {
           created_at: string
