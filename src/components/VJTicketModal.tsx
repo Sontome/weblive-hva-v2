@@ -124,6 +124,11 @@ export const VJTicketModal: React.FC<VJTicketModalProps> = ({ isOpen, onClose, i
 
       if (data.status === "OK") {
         setPnrData(data);
+        // Sync giá gốc về held_tickets (nếu PNR tồn tại trong giỏ hàng)
+        try {
+          const { syncTicketPrice } = await import('@/services/heldTicketService');
+          if (data.tongbillgiagoc) await syncTicketPrice(checkPnr.trim(), data.tongbillgiagoc);
+        } catch {}
         toast.success("Lấy thông tin PNR thành công");
       } else {
         toast.error("PNR không hợp lệ");
