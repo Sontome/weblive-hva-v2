@@ -12,6 +12,40 @@ import { ChangeTicketModal } from './change-ticket/ChangeTicketModal';
 import { RefreshCw, GraduationCap } from 'lucide-react';
 import { CheckSTUVNAModal } from './CheckSTUVNAModal';
 import { ChangeTicketVJModal } from './change-ticket-vj/ChangeTicketVJModal';
+import type { HoldTicketSegmentInput } from '@/types/heldTicket';
+
+const toIsoDate = (s?: string): string => {
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return s;
+};
+
+const buildVJHeldSegments = (flight: any): HoldTicketSegmentInput[] => {
+  const segs: HoldTicketSegmentInput[] = [];
+  const out = (flight?.['chiều đi'] ?? flight?.['chiều_đi']) as any;
+  const ret = (flight?.['chiều về'] ?? flight?.['chiều_về']) as any;
+  if (out?.nơi_đi && out?.nơi_đến) {
+    segs.push({
+      departure_airport: out.nơi_đi,
+      arrival_airport: out.nơi_đến,
+      departure_date: toIsoDate(out.ngày_cất_cánh),
+      departure_time: out.giờ_cất_cánh || '',
+      trip: `${out.nơi_đi}-${out.nơi_đến}`,
+    });
+  }
+  if (ret?.nơi_đi && ret?.nơi_đến) {
+    segs.push({
+      departure_airport: ret.nơi_đi,
+      arrival_airport: ret.nơi_đến,
+      departure_date: toIsoDate(ret.ngày_cất_cánh),
+      departure_time: ret.giờ_cất_cánh || '',
+      trip: `${ret.nơi_đi}-${ret.nơi_đến}`,
+    });
+  }
+  return segs;
+};
 
 interface FlightLeg {
   hãng: string;
@@ -1186,6 +1220,8 @@ const FlightResults: React.FC<FlightResultsProps> = ({
               departureAirport={(selectedFlight['chiều đi'] as FlightLeg)?.nơi_đi || (selectedFlight['chiều_đi'] as VNAFlightLeg)?.nơi_đi || ''}
               maxSeats={parseInt(selectedFlight['thông_tin_chung'].số_ghế_còn)}
               onBookingSuccess={onVJBookingSuccess}
+              heldAirline="VJ"
+              heldSegments={buildVJHeldSegments(selectedFlight)}
             />
             
             <VNABookingModal
@@ -1372,6 +1408,8 @@ const FlightResults: React.FC<FlightResultsProps> = ({
             departureAirport={(selectedFlight['chiều đi'] as FlightLeg)?.nơi_đi || (selectedFlight['chiều_đi'] as VNAFlightLeg)?.nơi_đi || ''}
             maxSeats={parseInt(selectedFlight['thông_tin_chung'].số_ghế_còn)}
             onBookingSuccess={onVJBookingSuccess}
+            heldAirline="VJ"
+            heldSegments={buildVJHeldSegments(selectedFlight)}
           />
           
           <VNABookingModal
