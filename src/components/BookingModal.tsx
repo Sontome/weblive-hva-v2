@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Copy } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { saveHeldTicket } from '@/services/heldTicketService';
+import type { Airline, HoldTicketSegmentInput } from '@/types/heldTicket';
 
 interface PassengerInfo {
   Họ: string;
@@ -29,6 +31,8 @@ interface BookingModalProps {
   departureAirport: string;
   maxSeats: number;
   onBookingSuccess?: (pnr: string) => void;
+  heldAirline?: Airline;
+  heldSegments?: HoldTicketSegmentInput[];
 }
 
 export const BookingModal = ({
@@ -39,7 +43,9 @@ export const BookingModal = ({
   tripType,
   departureAirport,
   maxSeats,
-  onBookingSuccess
+  onBookingSuccess,
+  heldAirline = 'VJ',
+  heldSegments,
 }: BookingModalProps) => {
   const [passengers, setPassengers] = useState<PassengerWithType[]>([
     {
@@ -260,6 +266,20 @@ export const BookingModal = ({
 
       if (data.mã_giữ_vé) {
         setSuccessData({ code: data.mã_giữ_vé, deadline: data.hạn_thanh_toán });
+        try {
+          const namelist = formattedPassengers.map((p) => `${p.Họ} ${p.Tên}`.trim().toUpperCase());
+          if (heldSegments?.length) {
+            await saveHeldTicket({
+              pnr: data.mã_giữ_vé,
+              airline: heldAirline,
+              namelist,
+              segments: heldSegments,
+              expire_date: data.hạn_thanh_toán || null,
+            });
+          }
+        } catch (e) {
+          console.error('[saveHeldTicket VJ]', e);
+        }
         // Call callback and auto-open ticket modal
         if (onBookingSuccess) {
           setTimeout(() => {
