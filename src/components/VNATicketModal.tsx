@@ -116,6 +116,10 @@ export const VNATicketModal: React.FC<VNATicketModalProps> = ({ isOpen, onClose,
 
       if (data.status === "OK") {
         setPnrData(data);
+        try {
+          const { syncTicketPrice } = await import('@/services/heldTicketService');
+          if (data.tongbillgiagoc) await syncTicketPrice(checkPnr.trim(), data.tongbillgiagoc);
+        } catch {}
         toast.success("Lấy thông tin PNR thành công");
       } else {
         toast.error("PNR không hợp lệ");
