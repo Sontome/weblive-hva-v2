@@ -9,6 +9,8 @@ import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SunPQTrip, SunPQBookingPayload, SunPQPassenger, SunPQPaxType } from '@/types/sunpq';
 import { bookingSunPQ, checkSunPQPnr, searchSunPQFlights } from '@/services/sunpqService';
+import { saveHeldTicket } from '@/services/heldTicketService';
+import type { HoldTicketSegmentInput } from '@/types/heldTicket';
 import SunPQTicketModal from './SunPQTicketModal';
 import LowFareChart from './LowFareChart';
 
@@ -191,6 +193,36 @@ const SunPQBookingForm: React.FC<{
         throw new Error(res.message || 'Không thể giữ vé SunPQ. Vui lòng thử lại.');
       }
       toast.success(`Giữ vé thành công: ${res.pnr}`);
+      try {
+        const namelist = list_passenger.map((p) => `${p.last_name} ${p.first_name}`.trim().toUpperCase());
+        const segs: HoldTicketSegmentInput[] = [];
+        if (trip.chiều_đi) {
+          segs.push({
+            departure_airport: trip.chiều_đi.nơi_đi,
+            arrival_airport: trip.chiều_đi.nơi_đến,
+            departure_date: trip.chiều_đi.ngày_cất_cánh,
+            departure_time: trip.chiều_đi.giờ_cất_cánh,
+            trip: `${trip.chiều_đi.nơi_đi}-${trip.chiều_đi.nơi_đến}`,
+          });
+        }
+        if (trip.chiều_về) {
+          segs.push({
+            departure_airport: trip.chiều_về.nơi_đi,
+            arrival_airport: trip.chiều_về.nơi_đến,
+            departure_date: trip.chiều_về.ngày_cất_cánh,
+            departure_time: trip.chiều_về.giờ_cất_cánh,
+            trip: `${trip.chiều_về.nơi_đi}-${trip.chiều_về.nơi_đến}`,
+          });
+        }
+        await saveHeldTicket({
+          pnr: res.pnr,
+          airline: 'SUN',
+          namelist,
+          segments: segs,
+        });
+      } catch (e) {
+        console.error('[saveHeldTicket SUN]', e);
+      }
       if (onSuccess) {
         onSuccess(res.pnr);
         return;
