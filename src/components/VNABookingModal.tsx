@@ -8,6 +8,8 @@ import { Plus, Trash2, Copy } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { format, differenceInYears, differenceInDays } from 'date-fns';
 import { DateInput } from './DateInput';
+import { saveHeldTicket } from '@/services/heldTicketService';
+import type { HoldTicketSegmentInput } from '@/types/heldTicket';
 
 
 interface InfantInfo {
@@ -295,7 +297,42 @@ export const VNABookingModal = ({
 
       if (data.status === 'OK' && data.pnr) {
         setSuccessData({ pnr: data.pnr });
-        
+        try {
+          const namelist = passengers.map((p) => `${p.Họ} ${p.Tên}`.trim().toUpperCase());
+          const toIso = (s: string) => {
+            if (!s) return '';
+            const m = s.split('/');
+            if (m.length === 3) return `${m[2]}-${m[1].padStart(2, '0')}-${m[0].padStart(2, '0')}`;
+            return s;
+          };
+          const segs: HoldTicketSegmentInput[] = [
+            {
+              departure_airport: flightInfo.dep,
+              arrival_airport: flightInfo.arr,
+              departure_date: toIso(flightInfo.depdate),
+              departure_time: flightInfo.deptime,
+              trip: `${flightInfo.dep}-${flightInfo.arr}`,
+            },
+          ];
+          if (flightInfo.tripType === 'RT' && flightInfo.arrdate) {
+            segs.push({
+              departure_airport: flightInfo.arr,
+              arrival_airport: flightInfo.dep,
+              departure_date: toIso(flightInfo.arrdate),
+              departure_time: flightInfo.arrtime || '',
+              trip: `${flightInfo.arr}-${flightInfo.dep}`,
+            });
+          }
+          await saveHeldTicket({
+            pnr: data.pnr,
+            airline: 'VNA',
+            namelist,
+            segments: segs,
+          });
+        } catch (e) {
+          console.error('[saveHeldTicket VNA]', e);
+        }
+
         // Auto close after 1.5s and trigger callback
         setTimeout(() => {
           setSuccessData(null);
