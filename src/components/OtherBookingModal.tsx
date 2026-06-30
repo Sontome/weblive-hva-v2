@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Copy } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { saveHeldTicket } from '@/services/heldTicketService';
+import { mapAirlineName } from '@/types/heldTicket';
 
 type PaxType = 'ADT' | 'CHD' | 'INF';
 
@@ -221,6 +223,43 @@ export const OtherBookingModal = ({
       const deadline = data.hạn_thanh_toán || data.message || '';
       if (code) {
         setSuccessData({ code, deadline });
+        try {
+          const namelist = passengers.map((p) => `${p.Họ} ${p.Tên}`.trim().toUpperCase());
+          const toIso = (s: string) => {
+            if (!s) return '';
+            if (/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(s)) return s.replace(/\//g, '-');
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+              const [dd, mm, yyyy] = s.split('/');
+              return `${yyyy}-${mm}-${dd}`;
+            }
+            return s;
+          };
+          const segs = [{
+            departure_airport: fromCode,
+            arrival_airport: toCode,
+            departure_date: toIso(depDate),
+            departure_time: '',
+            trip: `${fromCode}-${toCode}`,
+          }];
+          if (tripType === 'RT' && arrDate) {
+            segs.push({
+              departure_airport: toCode,
+              arrival_airport: fromCode,
+              departure_date: toIso(arrDate),
+              departure_time: '',
+              trip: `${toCode}-${fromCode}`,
+            });
+          }
+          await saveHeldTicket({
+            pnr: code,
+            airline: mapAirlineName(hang),
+            namelist,
+            segments: segs,
+            expire_date: typeof deadline === 'string' ? deadline : null,
+          });
+        } catch (e) {
+          console.error('[saveHeldTicket OTHER]', e);
+        }
         if (onBookingSuccess) {
           setTimeout(() => {
             setSuccessData(null);
