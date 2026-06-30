@@ -158,6 +158,11 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
         throw new Error('Không tìm thấy vé');
       }
       setData(res.data);
+      try {
+        const { syncTicketPrice } = await import('@/services/heldTicketService');
+        const tong = (res.data as { tongbillgiagoc?: number }).tongbillgiagoc;
+        if (tong) await syncTicketPrice(code, tong);
+      } catch {}
     } catch (e: any) {
       setError(e?.message || 'Không tìm thấy vé hoặc hệ thống lỗi.');
     } finally {
