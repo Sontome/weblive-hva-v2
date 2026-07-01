@@ -19,6 +19,7 @@ type HeldTicketRow = {
   hold_date: string;
   expire_date: string | null;
   total_price: number | string | null;
+  employee_name: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -50,6 +51,7 @@ function normalizeTicket(row: HeldTicketRow, segments: HeldSegmentRow[]): HeldTi
     total_price: row.total_price === null || row.total_price === undefined
       ? null
       : Number(row.total_price),
+    employee_name: row.employee_name ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     segments: segments
@@ -95,6 +97,16 @@ export async function saveHeldTicket(payload: HoldTicketPayload): Promise<HeldTi
   };
   const expireIso = normalizeExpire(payload.expire_date);
 
+  // Lấy tên nhân viên đang chọn trên phiên (localStorage)
+  let employeeName: string | null = null;
+  try {
+    const raw = localStorage.getItem('employee_identity_v1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.employee_name) employeeName = String(parsed.employee_name);
+    }
+  } catch { /* ignore */ }
+
   // Normalize departure_date -> 'YYYY-MM-DD' (accept DD/MM/YYYY, DD-MM-YYYY, or ISO)
   const normalizeDate = (raw: string | null | undefined): string => {
     if (!raw || typeof raw !== 'string') return '';
@@ -135,6 +147,7 @@ export async function saveHeldTicket(payload: HoldTicketPayload): Promise<HeldTi
       namelist,
       expire_date: expireIso,
       total_price: payload.total_price ?? null,
+      employee_name: employeeName,
     })
     .select('*')
     .single();
