@@ -31,6 +31,7 @@ export interface HeldTicket {
   hold_date: string;
   expire_date: string | null;
   total_price: number | null;
+  employee_name: string | null;
   created_at: string;
   updated_at: string;
   segments: HeldTicketSegment[];
