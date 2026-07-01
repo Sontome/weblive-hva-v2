@@ -223,6 +223,7 @@ export default function CartPage() {
                   <TableHead className="w-12">STT</TableHead>
                   <TableHead>PNR</TableHead>
                   <TableHead>Trạng Thái</TableHead>
+                  <TableHead>Nhân viên</TableHead>
                   <TableHead>Hành trình lựa chọn</TableHead>
                   <TableHead>Ngày đặt chỗ</TableHead>
                   <TableHead className="text-center">Khách</TableHead>
@@ -235,13 +236,13 @@ export default function CartPage() {
               </TableHeader>
               <TableBody>
                 {loading && (
-                  <TableRow><TableCell colSpan={11} className="text-center py-6 text-gray-500">Đang tải...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={12} className="text-center py-6 text-gray-500">Đang tải...</TableCell></TableRow>
                 )}
                 {!loading && error && (
-                  <TableRow><TableCell colSpan={11} className="text-center py-6 text-red-600">{error}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={12} className="text-center py-6 text-red-600">{error}</TableCell></TableRow>
                 )}
                 {!loading && !error && pageData.length === 0 && (
-                  <TableRow><TableCell colSpan={11} className="text-center py-6 text-gray-500">Không có dữ liệu</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={12} className="text-center py-6 text-gray-500">Không có dữ liệu</TableCell></TableRow>
                 )}
                 {pageData.map((t, i) => {
                   const idx = (page - 1) * PAGE_SIZE + i + 1;
@@ -259,6 +260,9 @@ export default function CartPage() {
                         </button>
                       </TableCell>
                       <TableCell><StatusBadge status={t.ticket_status} /></TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {t.employee_name || <span className="text-gray-400">—</span>}
+                      </TableCell>
                       <TableCell className="text-xs">
                         {t.segments.map((s) => (
                           <div key={s.id} className="text-orange-500 font-mono">
