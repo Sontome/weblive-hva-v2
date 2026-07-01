@@ -30,7 +30,7 @@ export function AirlineBadge({ airline }: { airline: Airline }) {
 export function StatusBadge({ status }: { status: TicketStatus }) {
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE_CLASS[status]}`}
+      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_BADGE_CLASS[status]}`}
     >
       {TICKET_STATUS_LABEL[status]}
     </span>
