@@ -181,6 +181,7 @@ export type Database = {
         Row: {
           airline: string
           created_at: string
+          employee_name: string | null
           expire_date: string | null
           hold_date: string
           id: string
@@ -196,6 +197,7 @@ export type Database = {
         Insert: {
           airline: string
           created_at?: string
+          employee_name?: string | null
           expire_date?: string | null
           hold_date?: string
           id?: string
@@ -211,6 +213,7 @@ export type Database = {
         Update: {
           airline?: string
           created_at?: string
+          employee_name?: string | null
           expire_date?: string | null
           hold_date?: string
           id?: string
