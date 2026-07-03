@@ -4,6 +4,7 @@ export type TicketStatus =
   | 'holding'
   | 'paid'
   | 'ticketed'
+  | 'issued'
   | 'cancelled'
   | 'expired';
 
@@ -64,6 +65,7 @@ export const TICKET_STATUS_LABEL: Record<TicketStatus, string> = {
   holding: 'Đang giữ',
   paid: 'Đã thanh toán',
   ticketed: 'Đã xuất vé',
+  issued: 'Đã xuất vé',
   cancelled: 'Đã hủy',
   expired: 'Hết hạn',
 };
