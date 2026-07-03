@@ -249,20 +249,34 @@ export async function cancelHeldTicket(id: string): Promise<void> {
  */
 export async function syncTicketPrice(
   pnr: string,
-  tongbillgiagoc: number | string | null | undefined
+  tongbillgiagoc: number | string | null | undefined,
+  paymentstatus?: boolean | null
 ): Promise<void> {
   try {
     if (!pnr) return;
     const num = Number(tongbillgiagoc);
     if (!Number.isFinite(num) || num <= 0) return;
 
-    const { error } = await supabase
+    // Chỉ set total_price khi đang NULL — không ghi đè giá cũ
+    const { error: priceErr } = await supabase
       .from('held_tickets')
       .update({ total_price: num, updated_at: new Date().toISOString() })
       .eq('pnr', pnr)
       .is('total_price', null);
+    if (priceErr) console.error(`[syncTicketPrice:price] PNR ${pnr}:`, priceErr);
 
-    if (error) console.error(`[syncTicketPrice] PNR ${pnr}:`, error);
+    // Chỉ đánh dấu đã thanh toán / đã xuất vé khi hãng xác nhận paymentstatus = true
+    if (paymentstatus === true) {
+      const { error: statusErr } = await supabase
+        .from('held_tickets')
+        .update({
+          payment_status: true,
+          ticket_status: 'issued',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('pnr', pnr);
+      if (statusErr) console.error(`[syncTicketPrice:status] PNR ${pnr}:`, statusErr);
+    }
   } catch (e) {
     console.error('[syncTicketPrice] unexpected error:', e);
   }
