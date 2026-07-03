@@ -13,6 +13,7 @@ export const STATUS_BADGE_CLASS: Record<TicketStatus, string> = {
   holding: 'bg-black text-white',
   paid: 'bg-green-600 text-white',
   ticketed: 'bg-blue-600 text-white',
+  issued: 'bg-blue-600 text-white',
   cancelled: 'bg-red-600 text-white',
   expired: 'bg-gray-400 text-white',
 };
