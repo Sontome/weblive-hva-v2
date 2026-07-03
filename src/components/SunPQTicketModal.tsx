@@ -160,8 +160,8 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
       setData(res.data);
       try {
         const { syncTicketPrice } = await import('@/services/heldTicketService');
-        const tong = (res.data as { tongbillgiagoc?: number }).tongbillgiagoc;
-        if (tong) await syncTicketPrice(code, tong);
+        const d = res.data as { tongbillgiagoc?: number; paymentstatus?: boolean };
+        if (d.tongbillgiagoc) await syncTicketPrice(code, d.tongbillgiagoc, Boolean(d.paymentstatus));
       } catch {}
     } catch (e: any) {
       setError(e?.message || 'Không tìm thấy vé hoặc hệ thống lỗi.');
