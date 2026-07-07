@@ -12,6 +12,7 @@ import CheckIn from "./pages/CheckIn";
 import ShiftDashboard from "./pages/ShiftDashboard";
 import CartPage from "./pages/CartPage";
 import HeldTicketsAdminPage from "./pages/HeldTicketsAdminPage";
+import TicketRulesAdmin from "./pages/TicketRulesAdmin";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/checkin" element={<CheckIn />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/admin/held-tickets" element={<HeldTicketsAdminPage />} />
+          <Route path="/admin/ticket-rules" element={<TicketRulesAdmin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
