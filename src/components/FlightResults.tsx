@@ -13,6 +13,9 @@ import { RefreshCw, GraduationCap } from 'lucide-react';
 import { CheckSTUVNAModal } from './CheckSTUVNAModal';
 import { ChangeTicketVJModal } from './change-ticket-vj/ChangeTicketVJModal';
 import type { HoldTicketSegmentInput } from '@/types/heldTicket';
+import { useTicketRulesDataset } from '@/hooks/useTicketRules';
+import { applyTicketRules, formatNotesLine } from '@/services/ticketRuleEngine';
+import type { RuleSegmentInput } from '@/types/ticketRules';
 
 const toIsoDate = (s?: string): string => {
   if (!s) return '';
@@ -217,6 +220,39 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   const [stuModalOpen, setStuModalOpen] = useState(false);
   const [stuFlight, setStuFlight] = useState<FlightResult | null>(null);
   const [studentPriceMap, setStudentPriceMap] = useState<Map<FlightResult, number>>(new Map());
+  const { data: rulesDataset } = useTicketRulesDataset();
+
+  const buildRuleSegments = (result: FlightResult): RuleSegmentInput[] => {
+    const segs: RuleSegmentInput[] = [];
+    const out = (result as any)['chiều đi'] ?? (result as any)['chiều_đi'];
+    const ret = (result as any)['chiều về'] ?? (result as any)['chiều_về'];
+    if (out) {
+      segs.push({
+        airline: out.hãng,
+        from: out.nơi_đi,
+        to: out.nơi_đến,
+        departure_time: out.giờ_cất_cánh,
+        arrival_time: out.giờ_hạ_cánh,
+        departure_date: out.ngày_cất_cánh,
+      });
+    }
+    if (ret) {
+      segs.push({
+        airline: ret.hãng,
+        from: ret.nơi_đi,
+        to: ret.nơi_đến,
+        departure_time: ret.giờ_cất_cánh,
+        arrival_time: ret.giờ_hạ_cánh,
+        departure_date: ret.ngày_cất_cánh,
+      });
+    }
+    return segs;
+  };
+
+  const computeRuleEffects = (result: FlightResult) => {
+    if (!rulesDataset) return null;
+    return applyTicketRules({ segments: buildRuleSegments(result), raw: result }, rulesDataset);
+  };
 
   const toggleDetails = (index: number) => {
     setExpandedDetails(prev => ({
@@ -628,6 +664,11 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     // Only show copy template for direct flights - HIDE for connecting flights
     const shouldShowCopyTemplate = isDirect && !isConnecting;
 
+    const ruleEffects = computeRuleEffects(result);
+    if (ruleEffects?.hidden) return null;
+    const ruleNoteLine = ruleEffects ? formatNotesLine(ruleEffects.notes) : '';
+    const ruleWarningLine = ruleEffects ? formatNotesLine(ruleEffects.warnings) : '';
+
     // Determine text color based on baggage type
     const getCopyTextColor = () => {
       if (!isVJ && baggageType === 'ADT') {
@@ -798,7 +839,9 @@ const FlightResults: React.FC<FlightResultsProps> = ({
               <div className="flex items-center justify-between mb-1">
                 <h5 className="text-xs font-medium text-gray-700">Thông tin gửi khách</h5>
                 <button
-                  onClick={() => copyToClipboard(copyTemplate)}
+                  onClick={() => copyToClipboard(
+                    ruleNoteLine ? `${copyTemplate}\n${ruleNoteLine}` : copyTemplate
+                  )}
                   className="flex items-center space-x-1 bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs hover:bg-blue-100 transition-colors"
                 >
                   <Copy className="w-3 h-3" />
@@ -807,7 +850,21 @@ const FlightResults: React.FC<FlightResultsProps> = ({
               </div>
               <div className={`bg-gray-50 p-2 rounded font-sans font-medium whitespace-pre-line min-h-[60px] text-xl ${getCopyTextColor()}`}>
                 {copyTemplate}
+                {ruleNoteLine && (
+                  <div className="text-red-600 font-bold text-base mt-1">{ruleNoteLine}</div>
+                )}
               </div>
+            </div>
+          )}
+
+          {(ruleWarningLine || (!shouldShowCopyTemplate && ruleNoteLine)) && (
+            <div className="mt-2 space-y-1">
+              {!shouldShowCopyTemplate && ruleNoteLine && (
+                <div className="text-red-600 font-bold text-sm">{ruleNoteLine}</div>
+              )}
+              {ruleWarningLine && (
+                <div className="text-amber-700 font-semibold text-sm">⚠ {ruleWarningLine}</div>
+              )}
             </div>
           )}
 
