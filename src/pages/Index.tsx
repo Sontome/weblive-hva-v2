@@ -494,6 +494,14 @@ const Index = () => {
               >
                 📊 Attendance Reports
               </Button>
+              <Button
+                onClick={() => navigate('/admin/ticket-rules')}
+                variant="outline"
+                size="sm"
+                className="px-2 sm:px-4 text-xs sm:text-sm"
+              >
+                ⚙️ Ticket Rules
+              </Button>
             </div>
           </div>
           <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-3">
