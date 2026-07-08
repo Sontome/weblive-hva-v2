@@ -47,7 +47,7 @@ const AIRLINE_OPTIONS = [
 
 const PAGE_SIZE = 10;
 
-export default function TicketRulesAdmin() {
+export default function TicketRulesAdmin({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<TicketCampaign[]>([]);
   const [rules, setRules] = useState<TicketRule[]>([]);
@@ -199,7 +199,8 @@ export default function TicketRulesAdmin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className={embedded ? "" : "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100"}>
+      {!embedded && (
       <header className="bg-white border-b sticky top-0 z-20">
         <div className="max-w-[1400px] mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -216,8 +217,16 @@ export default function TicketRulesAdmin() {
           </Button>
         </div>
       </header>
+      )}
 
-      <div className="max-w-[1400px] mx-auto px-4 py-6 grid grid-cols-12 gap-4">
+      <div className={embedded ? "grid grid-cols-12 gap-4" : "max-w-[1400px] mx-auto px-4 py-6 grid grid-cols-12 gap-4"}>
+        {embedded && (
+          <div className="col-span-12 flex justify-end">
+            <Button variant="outline" onClick={() => setTestOpen(true)}>
+              <FlaskConical className="h-4 w-4 mr-1" /> Test Rule
+            </Button>
+          </div>
+        )}
         {/* Sidebar: campaigns */}
         <aside className="col-span-12 lg:col-span-3">
           <Card>
