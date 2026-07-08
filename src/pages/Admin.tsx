@@ -10,6 +10,7 @@ import { Loader2, LogOut, Save, ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RouteDiscountManager from "@/components/admin/RouteDiscountManager";
 import ResourceAdmin from "@/components/admin/ResourceAdmin";
+import TicketRulesAdmin from "@/pages/TicketRulesAdmin";
 
 interface PriceConfig {
   id: string;
@@ -443,10 +444,11 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="pricing" className="w-full">
-          <TabsList className="mb-4 grid grid-cols-3 w-full max-w-2xl">
+          <TabsList className="mb-4 grid grid-cols-4 w-full max-w-3xl">
             <TabsTrigger value="pricing">Cấu hình giá</TabsTrigger>
             <TabsTrigger value="routes">Giảm theo chặng (VNA)</TabsTrigger>
             <TabsTrigger value="resources">Resources & Check-in</TabsTrigger>
+            <TabsTrigger value="ticket-rules">Ticket Rules</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pricing">
@@ -472,6 +474,10 @@ const Admin = () => {
 
           <TabsContent value="resources">
             <ResourceAdmin />
+          </TabsContent>
+
+          <TabsContent value="ticket-rules">
+            <TicketRulesAdmin embedded />
           </TabsContent>
         </Tabs>
       </div>
