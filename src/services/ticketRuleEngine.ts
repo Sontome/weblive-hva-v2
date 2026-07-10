@@ -178,8 +178,32 @@ export function matchRuleAgainstSegment(rule: TicketRule, seg: RuleSegmentInput)
     airlineMatches(rule.airline, seg.airline) &&
     routeMatches(rule.route, seg) &&
     timeMatches(rule.departure_time, seg.departure_time) &&
-    timeMatches(rule.arrival_time, seg.arrival_time)
+    timeMatches(rule.arrival_time, seg.arrival_time) &&
+    segmentPositionMatches(rule.segment_position ?? null, seg.segment_order ?? null) &&
+    legIndexMatchesPosition(rule.segment_position ?? null, seg.leg_index ?? null) &&
+    scopeMatches(rule.match_scope ?? null, seg.leg_size ?? null)
   );
+}
+
+function segmentPositionMatches(rulePos: number | null, segOrder: number | null): boolean {
+  if (rulePos == null) return true;
+  if (segOrder == null) return false;
+  return rulePos === segOrder;
+}
+
+/** When segment_position is set, restrict to outbound leg (leg_index === 0). */
+function legIndexMatchesPosition(rulePos: number | null, legIndex: number | null): boolean {
+  if (rulePos == null) return true;
+  if (legIndex == null) return true;
+  return legIndex === 0;
+}
+
+function scopeMatches(scope: string | null, legSize: number | null): boolean {
+  const s = (scope ?? "").trim().toLowerCase();
+  if (!s || s === "any") return true;
+  if (s === "direct") return legSize === 1;
+  if (s === "connecting") return (legSize ?? 0) >= 2;
+  return true;
 }
 
 /** Apply active rules to a ticket, returning effects (does not mutate ticket). */
