@@ -706,8 +706,10 @@ export type Database = {
           departure_time: string | null
           enabled: boolean
           id: string
+          match_scope: string | null
           priority: number
           route: string | null
+          segment_position: number | null
           updated_at: string
           value: string | null
         }
@@ -720,8 +722,10 @@ export type Database = {
           departure_time?: string | null
           enabled?: boolean
           id?: string
+          match_scope?: string | null
           priority?: number
           route?: string | null
+          segment_position?: number | null
           updated_at?: string
           value?: string | null
         }
@@ -734,8 +738,10 @@ export type Database = {
           departure_time?: string | null
           enabled?: boolean
           id?: string
+          match_scope?: string | null
           priority?: number
           route?: string | null
+          segment_position?: number | null
           updated_at?: string
           value?: string | null
         }
