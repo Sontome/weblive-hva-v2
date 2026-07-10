@@ -227,6 +227,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     const out = (result as any)['chiều đi'] ?? (result as any)['chiều_đi'];
     const ret = (result as any)['chiều về'] ?? (result as any)['chiều_về'];
     if (out) {
+      const outLegSize = out.số_điểm_dừng === '0' ? 1 : out.số_điểm_dừng === '1' ? 2 : out.số_điểm_dừng === '2' ? 3 : 1;
       segs.push({
         airline: out.hãng,
         from: out.nơi_đi,
@@ -234,9 +235,13 @@ const FlightResults: React.FC<FlightResultsProps> = ({
         departure_time: out.giờ_cất_cánh,
         arrival_time: out.giờ_hạ_cánh,
         departure_date: out.ngày_cất_cánh,
+        segment_order: 1,
+        leg_index: 0,
+        leg_size: outLegSize,
       });
     }
     if (ret) {
+      const retLegSize = ret.số_điểm_dừng === '0' ? 1 : ret.số_điểm_dừng === '1' ? 2 : ret.số_điểm_dừng === '2' ? 3 : 1;
       segs.push({
         airline: ret.hãng,
         from: ret.nơi_đi,
@@ -244,6 +249,9 @@ const FlightResults: React.FC<FlightResultsProps> = ({
         departure_time: ret.giờ_cất_cánh,
         arrival_time: ret.giờ_hạ_cánh,
         departure_date: ret.ngày_cất_cánh,
+        segment_order: 1,
+        leg_index: 1,
+        leg_size: retLegSize,
       });
     }
     return segs;
