@@ -13,6 +13,9 @@ import { saveHeldTicket } from '@/services/heldTicketService';
 import type { HoldTicketSegmentInput } from '@/types/heldTicket';
 import SunPQTicketModal from './SunPQTicketModal';
 import LowFareChart from './LowFareChart';
+import { useTicketRulesDataset } from '@/hooks/useTicketRules';
+import { applyTicketRules } from '@/services/ticketRuleEngine';
+import type { RuleSegmentInput } from '@/types/ticketRules';
 
 interface SearchDataLike {
   tripType: 'OW' | 'RT';
@@ -91,14 +94,41 @@ const buildRouteStr = (leg?: { nơi_đi: string; nơi_đến: string; điểm_d�
   return leg.điểm_dừng_1 ? `${leg.nơi_đi}-${leg.điểm_dừng_1}-${leg.nơi_đến}` : `${leg.nơi_đi}-${leg.nơi_đến}`;
 };
 
-const generateCopyText = (trip: SunPQTrip, finalPrice: number) => {
+const buildSunPQRuleSegments = (trip: SunPQTrip): RuleSegmentInput[] => {
+  const segs: RuleSegmentInput[] = [];
+  const mk = (leg: SunPQTrip['chiều_đi'] | undefined, legIndex: number) => {
+    if (!leg) return;
+    const hasStop = !!leg.điểm_dừng_1;
+    const legSize = hasStop ? 2 : 1;
+    // For rule matching we care about segment_position = 1: use leg-level from/to
+    // (direct = from→to, connecting first seg = from→stop which won't match rules
+    //  written for the full route — desired behaviour).
+    const to = hasStop ? (leg.điểm_dừng_1 as string) : leg.nơi_đến;
+    segs.push({
+      airline: 'SUN',
+      from: leg.nơi_đi,
+      to,
+      departure_time: leg.giờ_cất_cánh,
+      arrival_time: leg.giờ_hạ_cánh,
+      departure_date: leg.ngày_cất_cánh,
+      segment_order: 1,
+      leg_index: legIndex,
+      leg_size: legSize,
+    });
+  };
+  mk(trip.chiều_đi, 0);
+  mk(trip.chiều_về, 1);
+  return segs;
+};
+
+const generateCopyText = (trip: SunPQTrip, finalPrice: number, baggageLine?: string) => {
   const out = trip.chiều_đi;
   const ret = trip.chiều_về;
   const lines: string[] = [];
   lines.push(`${buildRouteStr(out)} ${out.giờ_cất_cánh} ngày ${fmtDate(out.ngày_cất_cánh)}`);
   if (ret) lines.push(`${buildRouteStr(ret)} ${ret.giờ_cất_cánh} ngày ${fmtDate(ret.ngày_cất_cánh)}`);
   lines.push(`SunPQ 7kg xách tay,`);
-  lines.push(`23kg ký gửi,`);
+  lines.push(`${baggageLine || '23kg ký gửi'},`);
   lines.push(`giá vé = ${formatPrice(finalPrice)}w`);
   return lines.join('\n');
 };
@@ -325,6 +355,7 @@ const SunPQBookingForm: React.FC<{
 // ----- Main Modal -----
 export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchData, lowerFare }) => {
   const [currentFlights, setCurrentFlights] = useState<SunPQTrip[]>(flights);
+  const { data: rulesDataset } = useTicketRulesDataset();
   const [currentLowerFare, setCurrentLowerFare] = useState(lowerFare || null);
   const [currentDep, setCurrentDep] = useState<string>(searchData?.departureDate || '');
   const [currentRet, setCurrentRet] = useState<string>(searchData?.returnDate || '');
@@ -444,7 +475,10 @@ export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchDa
               const classSummary = ret
                 ? `Khứ hồi: ${out?.loại_vé}-${ret.loại_vé}`
                 : `Một chiều: ${out?.loại_vé}`;
-              const copyText = generateCopyText(trip, finalPrice);
+              const effects = rulesDataset
+                ? applyTicketRules({ segments: buildSunPQRuleSegments(trip), raw: trip }, rulesDataset)
+                : null;
+              const copyText = generateCopyText(trip, finalPrice, effects?.baggage);
               return (
                 <div key={idx} className="border-2 border-orange-400 rounded-lg p-3 bg-white shadow">
                   <div className="flex items-center justify-between mb-2">
