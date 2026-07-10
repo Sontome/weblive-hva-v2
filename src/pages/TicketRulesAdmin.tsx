@@ -170,6 +170,8 @@ export default function TicketRulesAdmin({ embedded = false }: { embedded?: bool
       value: data.value ?? null,
       priority: Number(data.priority ?? 0),
       enabled: data.enabled ?? true,
+      segment_position: data.segment_position ?? null,
+      match_scope: data.match_scope ?? null,
     };
     if (ruleDialog.edit) {
       const { error } = await supabase.from("ticket_rules").update(payload).eq("id", ruleDialog.edit.id);
@@ -538,6 +540,8 @@ function RuleDialog({
         value: "",
         priority: 0,
         enabled: true,
+        segment_position: null,
+        match_scope: null,
       },
     );
   }, [state.edit, state.open]);
@@ -621,6 +625,39 @@ function RuleDialog({
               onChange={(e) => setForm({ ...form, value: e.target.value })}
             />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Vị trí chặng</Label>
+              <Select
+                value={form.segment_position == null ? "__any" : String(form.segment_position)}
+                onValueChange={(v) =>
+                  setForm({ ...form, segment_position: v === "__any" ? null : Number(v) })
+                }
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__any">Mọi chặng</SelectItem>
+                  <SelectItem value="1">Chặng 1 (đầu chiều)</SelectItem>
+                  <SelectItem value="2">Chặng 2</SelectItem>
+                  <SelectItem value="3">Chặng 3</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Phạm vi khớp</Label>
+              <Select
+                value={form.match_scope ?? "any"}
+                onValueChange={(v) => setForm({ ...form, match_scope: v === "any" ? null : v })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Bất kỳ</SelectItem>
+                  <SelectItem value="direct">Bay thẳng (1 chặng)</SelectItem>
+                  <SelectItem value="connecting">Nối chuyến (2+ chặng)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <Switch checked={form.enabled ?? true} onCheckedChange={(v) => setForm({ ...form, enabled: v })} />
             <Label>Enable</Label>
@@ -648,6 +685,8 @@ function TestRuleDialog({
   const [route, setRoute] = useState("ICN-SGN");
   const [time, setTime] = useState("17:55");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [legSize, setLegSize] = useState<number>(1);
+  const [segOrder, setSegOrder] = useState<number>(1);
 
   const [from, to] = route.split("-");
   const matched = useMemo(
@@ -659,10 +698,13 @@ function TestRuleDialog({
           to: to ?? "",
           departure_time: time,
           departure_date: date,
+          segment_order: segOrder,
+          leg_size: legSize,
+          leg_index: 0,
         },
         dataset,
       ),
-    [airline, from, to, time, date, dataset],
+    [airline, from, to, time, date, dataset, legSize, segOrder],
   );
 
   return (
@@ -687,6 +729,28 @@ function TestRuleDialog({
           <div>
             <Label>Date</Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div>
+            <Label>Vị trí chặng</Label>
+            <Select value={String(segOrder)} onValueChange={(v) => setSegOrder(Number(v))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1</SelectItem>
+                <SelectItem value="2">2</SelectItem>
+                <SelectItem value="3">3</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Số chặng trong chiều</Label>
+            <Select value={String(legSize)} onValueChange={(v) => setLegSize(Number(v))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 (bay thẳng)</SelectItem>
+                <SelectItem value="2">2 (nối chuyến)</SelectItem>
+                <SelectItem value="3">3</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="mt-2">
