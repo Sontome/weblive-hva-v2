@@ -16,11 +16,11 @@ export interface SunPQSearchResult {
 }
 
 export const searchSunPQFlights = async (searchData: FlightSearchData): Promise<SunPQSearchResult> => {
-  const body = {
+  const isRT = searchData.tripType === 'RT';
+  const body: Record<string, any> = {
     departure: searchData.departure,
     arrival: searchData.arrival,
     dep_date: searchData.departureDate,
-    arr_date: searchData.tripType === 'RT' ? (searchData.returnDate || searchData.departureDate) : searchData.departureDate,
     trip_type: searchData.tripType,
     adt: searchData.adults || 1,
     chd: searchData.children || 0,
@@ -28,6 +28,7 @@ export const searchSunPQFlights = async (searchData: FlightSearchData): Promise<
     promo_code: '',
     currency: 'KRW',
   };
+  if (isRT) body.arr_date = searchData.returnDate || searchData.departureDate;
   logTag('SUNPQ_SEARCH_REQUEST', body);
   try {
     const res = await fetch(`${SUNPQ_BASE}/check-ve-v3`, {
