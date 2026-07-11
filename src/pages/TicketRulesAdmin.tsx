@@ -172,6 +172,9 @@ export default function TicketRulesAdmin({ embedded = false }: { embedded?: bool
       enabled: data.enabled ?? true,
       segment_position: data.segment_position ?? null,
       match_scope: data.match_scope ?? null,
+      leg_scope: data.leg_scope ?? null,
+      booking_class: data.booking_class?.trim() ? data.booking_class.trim().toUpperCase() : null,
+      require_other_leg_direct: data.require_other_leg_direct ?? false,
     };
     if (ruleDialog.edit) {
       const { error } = await supabase.from("ticket_rules").update(payload).eq("id", ruleDialog.edit.id);
@@ -542,6 +545,9 @@ function RuleDialog({
         enabled: true,
         segment_position: null,
         match_scope: null,
+        leg_scope: null,
+        booking_class: "",
+        require_other_leg_direct: false,
       },
     );
   }, [state.edit, state.open]);
@@ -658,6 +664,46 @@ function RuleDialog({
               </Select>
             </div>
           </div>
+          <div>
+            <Label>Chiều bay áp dụng</Label>
+            <Select
+              value={form.leg_scope ?? "any"}
+              onValueChange={(v) => setForm({ ...form, leg_scope: v === "any" ? null : v })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Cả 2 chiều</SelectItem>
+                <SelectItem value="outbound">Chỉ chiều đi</SelectItem>
+                <SelectItem value="return">Chỉ chiều về</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Ví dụ: rule replace_baggage nên chọn "Chỉ chiều đi"; rule append_note cho HAN-ICN khuyến mãi chọn "Chỉ chiều về".
+            </p>
+          </div>
+          <div>
+            <Label>Hạng ghế (Booking class)</Label>
+            <Input
+              value={form.booking_class ?? ""}
+              placeholder='VD: "V" | "V,W,U" | ">=V" | "<=M"'
+              onChange={(e) => setForm({ ...form, booking_class: e.target.value.toUpperCase() })}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {'Bỏ trống = mọi hạng. Cú pháp: exact ("V"), danh sách ("V,W,U"), hoặc so sánh alphabet (">=V", "<=M").'}
+            </p>
+          </div>
+          <div className="flex items-start gap-2 border rounded-md p-2">
+            <Switch
+              checked={form.require_other_leg_direct ?? false}
+              onCheckedChange={(v) => setForm({ ...form, require_other_leg_direct: v })}
+            />
+            <div>
+              <Label>Yêu cầu chiều còn lại cũng bay thẳng</Label>
+              <p className="text-[11px] text-muted-foreground">
+                Bật cho rule khuyến mãi HAN-ICN: chỉ áp dụng nếu chiều đi (ICN-HAN) cũng bay thẳng, không nối chuyến.
+              </p>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <Switch checked={form.enabled ?? true} onCheckedChange={(v) => setForm({ ...form, enabled: v })} />
             <Label>Enable</Label>
@@ -687,6 +733,9 @@ function TestRuleDialog({
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [legSize, setLegSize] = useState<number>(1);
   const [segOrder, setSegOrder] = useState<number>(1);
+  const [bookingClass, setBookingClass] = useState<string>("");
+  const [legIndex, setLegIndex] = useState<number>(0);
+  const [otherLegSize, setOtherLegSize] = useState<number>(1);
 
   const [from, to] = route.split("-");
   const matched = useMemo(
@@ -700,11 +749,13 @@ function TestRuleDialog({
           departure_date: date,
           segment_order: segOrder,
           leg_size: legSize,
-          leg_index: 0,
+          leg_index: legIndex,
+          booking_class: bookingClass || null,
+          other_leg_size: otherLegSize,
         },
         dataset,
       ),
-    [airline, from, to, time, date, dataset, legSize, segOrder],
+    [airline, from, to, time, date, dataset, legSize, segOrder, bookingClass, legIndex, otherLegSize],
   );
 
   return (
@@ -749,6 +800,35 @@ function TestRuleDialog({
                 <SelectItem value="1">1 (bay thẳng)</SelectItem>
                 <SelectItem value="2">2 (nối chuyến)</SelectItem>
                 <SelectItem value="3">3</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Hạng ghế (loại_vé)</Label>
+            <Input
+              value={bookingClass}
+              placeholder="V"
+              onChange={(e) => setBookingClass(e.target.value.toUpperCase())}
+            />
+          </div>
+          <div>
+            <Label>Chiều</Label>
+            <Select value={String(legIndex)} onValueChange={(v) => setLegIndex(Number(v))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Chiều đi</SelectItem>
+                <SelectItem value="1">Chiều về</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Số chặng chiều còn lại</Label>
+            <Select value={String(otherLegSize)} onValueChange={(v) => setOtherLegSize(Number(v))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 (bay thẳng)</SelectItem>
+                <SelectItem value="2">2 (nối chuyến)</SelectItem>
+                <SelectItem value="0">Không có (1 chiều)</SelectItem>
               </SelectContent>
             </Select>
           </div>
