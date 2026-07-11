@@ -133,8 +133,7 @@ const generateBodyText = (
   lines.push(`${buildRouteStr(out)} ${out.giờ_cất_cánh} ngày ${fmtDate(out.ngày_cất_cánh)}`);
   if (ret) lines.push(`${buildRouteStr(ret)} ${ret.giờ_cất_cánh} ngày ${fmtDate(ret.ngày_cất_cánh)}`);
   lines.push(`SunPQ 7kg xách tay,`);
-  lines.push(`${baggageLine || '23kg ký gửi'},`);
-  lines.push(`giá vé = ${formatPrice(finalPrice)}w`);
+  lines.push(`${baggageLine || '23kg ký gửi'}, giá vé = ${formatPrice(finalPrice)}w`);
   return lines.join('\n');
 };
 
