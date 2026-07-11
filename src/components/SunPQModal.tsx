@@ -14,7 +14,7 @@ import type { HoldTicketSegmentInput } from '@/types/heldTicket';
 import SunPQTicketModal from './SunPQTicketModal';
 import LowFareChart from './LowFareChart';
 import { useTicketRulesDataset } from '@/hooks/useTicketRules';
-import { applyTicketRules } from '@/services/ticketRuleEngine';
+import { applyTicketRules, formatNotesLine } from '@/services/ticketRuleEngine';
 import type { RuleSegmentInput } from '@/types/ticketRules';
 
 interface SearchDataLike {
@@ -114,6 +114,7 @@ const buildSunPQRuleSegments = (trip: SunPQTrip): RuleSegmentInput[] => {
       segment_order: 1,
       leg_index: legIndex,
       leg_size: legSize,
+      booking_class: leg.loại_vé,
     });
   };
   mk(trip.chiều_đi, 0);
@@ -121,7 +122,11 @@ const buildSunPQRuleSegments = (trip: SunPQTrip): RuleSegmentInput[] => {
   return segs;
 };
 
-const generateCopyText = (trip: SunPQTrip, finalPrice: number, baggageLine?: string) => {
+const generateBodyText = (
+  trip: SunPQTrip,
+  finalPrice: number,
+  baggageLine?: string,
+) => {
   const out = trip.chiều_đi;
   const ret = trip.chiều_về;
   const lines: string[] = [];
@@ -478,7 +483,9 @@ export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchDa
               const effects = rulesDataset
                 ? applyTicketRules({ segments: buildSunPQRuleSegments(trip), raw: trip }, rulesDataset)
                 : null;
-              const copyText = generateCopyText(trip, finalPrice, effects?.baggage);
+              const bodyText = generateBodyText(trip, finalPrice, effects?.baggage);
+              const noteLine = effects?.notes?.length ? formatNotesLine(effects.notes) : '';
+              const copyText = noteLine ? `${bodyText}\n${noteLine}` : bodyText;
               return (
                 <div key={idx} className="border-2 border-orange-400 rounded-lg p-3 bg-white shadow">
                   <div className="flex items-center justify-between mb-2">
@@ -507,7 +514,15 @@ export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchDa
                       <Copy className="w-3 h-3" /> <span className="font-medium">Copy</span>
                     </button>
                   </div>
-                  <pre className="bg-gray-50 p-2 rounded font-sans font-medium whitespace-pre-line min-h-[60px] text-xl text-black">{copyText}</pre>
+                  <pre className="bg-gray-50 p-2 rounded font-sans font-medium whitespace-pre-line min-h-[60px] text-xl text-black">
+{bodyText}
+{noteLine && (
+  <>
+    {"\n"}
+    <span className="text-red-600 font-bold">{noteLine}</span>
+  </>
+)}
+</pre>
                   <div className="mt-2 flex justify-end">
                     <Button size="sm" className="bg-green-500 hover:bg-green-600" onClick={() => setBookingTrip(trip)}>
                       Giữ vé
