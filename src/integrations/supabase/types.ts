@@ -701,13 +701,16 @@ export type Database = {
           action: string
           airline: string | null
           arrival_time: string | null
+          booking_class: string | null
           campaign_id: string
           created_at: string
           departure_time: string | null
           enabled: boolean
           id: string
+          leg_scope: string | null
           match_scope: string | null
           priority: number
+          require_other_leg_direct: boolean
           route: string | null
           segment_position: number | null
           updated_at: string
@@ -717,13 +720,16 @@ export type Database = {
           action?: string
           airline?: string | null
           arrival_time?: string | null
+          booking_class?: string | null
           campaign_id: string
           created_at?: string
           departure_time?: string | null
           enabled?: boolean
           id?: string
+          leg_scope?: string | null
           match_scope?: string | null
           priority?: number
+          require_other_leg_direct?: boolean
           route?: string | null
           segment_position?: number | null
           updated_at?: string
@@ -733,13 +739,16 @@ export type Database = {
           action?: string
           airline?: string | null
           arrival_time?: string | null
+          booking_class?: string | null
           campaign_id?: string
           created_at?: string
           departure_time?: string | null
           enabled?: boolean
           id?: string
+          leg_scope?: string | null
           match_scope?: string | null
           priority?: number
+          require_other_leg_direct?: boolean
           route?: string | null
           segment_position?: number | null
           updated_at?: string
