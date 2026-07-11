@@ -33,6 +33,19 @@ export interface TicketRule {
   segment_position: number | null;
   /** 'direct' = only match when the leg is a direct flight (single segment), 'any'/null = default */
   match_scope: string | null;
+  /**
+   * Booking-class filter. Syntax:
+   *   - null / "" = any
+   *   - "V"        = exact match
+   *   - "V,W,U"    = any of the listed classes
+   *   - ">=V"      = alphabetical >= V (i.e. V, W, X, Y, Z)
+   *   - "<=V"      = alphabetical <= V (i.e. A..V)
+   */
+  booking_class: string | null;
+  /** 'outbound' = only chiều đi, 'return' = only chiều về, null/'any' = cả hai */
+  leg_scope: string | null;
+  /** Nếu true: rule chỉ khớp khi chiều còn lại của vé cũng là bay thẳng (leg_size = 1). */
+  require_other_leg_direct: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +65,8 @@ export interface RuleSegmentInput {
   leg_index?: number | null;
   /** total number of segments in this leg (1 = direct, 2+ = connecting) */
   leg_size?: number | null;
+  /** Booking class letter for this leg (e.g. "V", "U", "W") */
+  booking_class?: string | null;
 }
 
 export interface RuleTicketInput {
