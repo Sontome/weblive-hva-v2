@@ -180,8 +180,9 @@ export function matchRuleAgainstSegment(rule: TicketRule, seg: RuleSegmentInput)
     timeMatches(rule.departure_time, seg.departure_time) &&
     timeMatches(rule.arrival_time, seg.arrival_time) &&
     segmentPositionMatches(rule.segment_position ?? null, seg.segment_order ?? null) &&
-    legIndexMatchesPosition(rule.segment_position ?? null, seg.leg_index ?? null) &&
-    scopeMatches(rule.match_scope ?? null, seg.leg_size ?? null)
+    legScopeMatches(rule.leg_scope ?? null, seg.leg_index ?? null) &&
+    scopeMatches(rule.match_scope ?? null, seg.leg_size ?? null) &&
+    bookingClassMatches(rule.booking_class ?? null, seg.booking_class ?? null)
   );
 }
 
@@ -191,11 +192,14 @@ function segmentPositionMatches(rulePos: number | null, segOrder: number | null)
   return rulePos === segOrder;
 }
 
-/** When segment_position is set, restrict to outbound leg (leg_index === 0). */
-function legIndexMatchesPosition(rulePos: number | null, legIndex: number | null): boolean {
-  if (rulePos == null) return true;
+/** Restrict rule to a specific leg direction. null/'any' = both. */
+function legScopeMatches(scope: string | null, legIndex: number | null): boolean {
+  const s = (scope ?? "").trim().toLowerCase();
+  if (!s || s === "any") return true;
   if (legIndex == null) return true;
-  return legIndex === 0;
+  if (s === "outbound") return legIndex === 0;
+  if (s === "return") return legIndex === 1;
+  return true;
 }
 
 function scopeMatches(scope: string | null, legSize: number | null): boolean {
@@ -204,6 +208,25 @@ function scopeMatches(scope: string | null, legSize: number | null): boolean {
   if (s === "direct") return legSize === 1;
   if (s === "connecting") return (legSize ?? 0) >= 2;
   return true;
+}
+
+function bookingClassMatches(ruleClass: string | null, segClass: string | null): boolean {
+  const raw = (ruleClass ?? "").trim().toUpperCase();
+  if (!raw) return true;
+  const seg = (segClass ?? "").trim().toUpperCase();
+  if (!seg) return false;
+  // >=X or <=X — alphabetical comparison on first letter
+  const m = raw.match(/^(>=|<=)\s*([A-Z])$/);
+  if (m) {
+    const op = m[1];
+    const target = m[2];
+    const first = seg.charAt(0);
+    if (op === ">=") return first >= target;
+    return first <= target;
+  }
+  // Comma-separated list or single letter
+  const list = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  return list.includes(seg);
 }
 
 /** Apply active rules to a ticket, returning effects (does not mutate ticket). */
@@ -215,6 +238,13 @@ export function applyTicketRules(
   const campaignsById = new Map(dataset.campaigns.map((c) => [c.id, c]));
   const rulesByCampaign = indexRules(dataset);
 
+  // Precompute leg sizes keyed by leg_index for cross-leg conditions.
+  const legSizeByIndex = new Map<number, number>();
+  for (const s of ticket.segments) {
+    if (s.leg_index == null || s.leg_size == null) continue;
+    if (!legSizeByIndex.has(s.leg_index)) legSizeByIndex.set(s.leg_index, s.leg_size);
+  }
+
   for (const seg of ticket.segments) {
     const segDate = toISODate(seg.departure_date);
     for (const [campId, rules] of rulesByCampaign) {
@@ -223,6 +253,13 @@ export function applyTicketRules(
       if (!campaignActiveForDate(camp, segDate)) continue;
       for (const rule of rules) {
         if (!matchRuleAgainstSegment(rule, seg)) continue;
+        if (rule.require_other_leg_direct) {
+          if (seg.leg_index == null) continue;
+          const otherIdx = seg.leg_index === 0 ? 1 : 0;
+          const otherSize = legSizeByIndex.get(otherIdx);
+          // Yêu cầu chiều còn lại phải tồn tại và là bay thẳng
+          if (otherSize !== 1) continue;
+        }
         const handler = handlers.get(rule.action);
         if (!handler) continue;
         const ctx: ActionContext = { effects, rule, segment: seg, ticket };
@@ -236,7 +273,7 @@ export function applyTicketRules(
 
 /** Test helper — returns rules that would match a synthetic segment. */
 export function testMatch(
-  input: RuleSegmentInput & { date?: string },
+  input: RuleSegmentInput & { date?: string; other_leg_size?: number | null },
   dataset: RuleEngineDataset,
 ): TicketRule[] {
   const seg: RuleSegmentInput = { ...input, departure_date: input.date ?? input.departure_date };
@@ -248,7 +285,9 @@ export function testMatch(
     const camp = campaignsById.get(campId);
     if (!camp || !campaignActiveForDate(camp, segDate)) continue;
     for (const rule of rules) {
-      if (matchRuleAgainstSegment(rule, seg)) matched.push(rule);
+      if (!matchRuleAgainstSegment(rule, seg)) continue;
+      if (rule.require_other_leg_direct && input.other_leg_size !== 1) continue;
+      matched.push(rule);
     }
   }
   return matched;
