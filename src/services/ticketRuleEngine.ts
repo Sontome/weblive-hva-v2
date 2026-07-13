@@ -254,11 +254,12 @@ export function applyTicketRules(
       for (const rule of rules) {
         if (!matchRuleAgainstSegment(rule, seg)) continue;
         if (rule.require_other_leg_direct) {
-          if (seg.leg_index == null) continue;
-          const otherIdx = seg.leg_index === 0 ? 1 : 0;
-          const otherSize = legSizeByIndex.get(otherIdx);
-          // Yêu cầu chiều còn lại phải tồn tại và là bay thẳng
-          if (otherSize !== 1) continue;
+          // Nếu vé chỉ có 1 chiều (OW) thì không có chiều còn lại → coi như thoả mãn.
+          if (seg.leg_index != null && legSizeByIndex.size > 1) {
+            const otherIdx = seg.leg_index === 0 ? 1 : 0;
+            const otherSize = legSizeByIndex.get(otherIdx);
+            if (otherSize != null && otherSize !== 1) continue;
+          }
         }
         const handler = handlers.get(rule.action);
         if (!handler) continue;
@@ -286,7 +287,11 @@ export function testMatch(
     if (!camp || !campaignActiveForDate(camp, segDate)) continue;
     for (const rule of rules) {
       if (!matchRuleAgainstSegment(rule, seg)) continue;
-      if (rule.require_other_leg_direct && input.other_leg_size !== 1) continue;
+      if (rule.require_other_leg_direct) {
+        // 0/null = không có chiều còn lại (OW) → thoả mãn. 1 = direct → thoả mãn. >=2 = fail.
+        const ols = input.other_leg_size;
+        if (ols != null && ols !== 0 && ols !== 1) continue;
+      }
       matched.push(rule);
     }
   }
