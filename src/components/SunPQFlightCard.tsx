@@ -1,6 +1,5 @@
 import React from 'react';
 import { Users, Copy } from 'lucide-react';
-import { Button } from './ui/button';
 import { toast } from 'sonner';
 import type { SunPQTrip } from '@/types/sunpq';
 import { calculateSunPQFinalPrice } from './SunPQModal';
@@ -146,10 +145,13 @@ export const SunPQFlightCard: React.FC<Props> = ({ trip, searchData, onBook }) =
 )}
 </pre>
       {onBook && (
-        <div className="mt-2 flex justify-end">
-          <Button size="sm" className="bg-green-500 hover:bg-green-600" onClick={onBook}>
-            Giữ vé
-          </Button>
+        <div className="mt-auto pt-2 flex justify-end">
+          <button
+            onClick={onBook}
+            className="flex items-center space-x-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs transition-colors"
+          >
+            <span className="text-xs font-medium">Giữ vé</span>
+          </button>
         </div>
       )}
     </div>
