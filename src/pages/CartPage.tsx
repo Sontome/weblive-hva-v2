@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Copy, Info, ShoppingCart, Trash2 } from 'lucide-react';
+import { ArrowLeft, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,33 +10,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { useHeldTickets } from '@/hooks/useHeldTickets';
+import { supabase } from '@/integrations/supabase/client';
+import { useHeldTicketsAdmin } from '@/hooks/useHeldTicketsAdmin';
+import { getHeldTicketTripOptions } from '@/services/heldTicketService';
 import type { HeldTicket, TicketStatus, Airline } from '@/types/heldTicket';
 import { TICKET_STATUS_LABEL } from '@/types/heldTicket';
-import {
-  AirlineBadge,
-  StatusBadge,
-  formatDateTime,
-  formatMoney,
-} from '@/components/heldTickets/heldTicketUI';
+import { CartTicketsTable } from '@/components/heldTickets/CartTicketsTable';
+import { HeldTicketsPagination } from '@/components/heldTickets/HeldTicketsPagination';
 import { HeldTicketDetailModal } from '@/components/heldTickets/HeldTicketDetailModal';
 
-const PAGE_SIZE = 20;
+// Server-side pagination — chỉ load đúng dữ liệu của trang hiện tại,
+// không tải toàn bộ vé của user rồi mới lọc/phân trang ở client.
+const PAGE_SIZE = 100;
 
 const STATUS_OPTIONS: Array<{ value: 'all' | TicketStatus; label: string }> = [
   { value: 'all', label: 'Tất cả' },
@@ -59,7 +46,7 @@ function todayIso() {
 }
 
 export default function CartPage() {
-  const { tickets, loading, error, cancelTicket } = useHeldTickets();
+  const [tripOptions, setTripOptions] = useState<string[]>([]);
 
   const [flyFrom, setFlyFrom] = useState('');
   const [flyTo, setFlyTo] = useState('');
@@ -71,29 +58,26 @@ export default function CartPage() {
   const [page, setPage] = useState(1);
   const [detailTicket, setDetailTicket] = useState<HeldTicket | null>(null);
 
-  const tripOptions = useMemo(() => {
-    const set = new Set<string>();
-    tickets.forEach((t) => t.segments.forEach((s) => set.add(s.trip)));
-    return Array.from(set).sort();
-  }, [tickets]);
+  const { tickets, totalCount, totalPages, loading, error, cancelTicket } = useHeldTicketsAdmin({
+    admin: false,
+    page,
+    pageSize: PAGE_SIZE,
+    filters: { airline, status, trip, bookFrom, bookTo, flyFrom, flyTo },
+  });
 
-  const filtered = useMemo(() => {
-    return tickets.filter((t) => {
-      const firstSeg = t.segments[0];
-      if (flyFrom && firstSeg && firstSeg.departure_date < flyFrom) return false;
-      if (flyTo && firstSeg && firstSeg.departure_date > flyTo) return false;
-      if (bookFrom && t.created_at.slice(0, 10) < bookFrom) return false;
-      if (bookTo && t.created_at.slice(0, 10) > bookTo) return false;
-      if (airline !== 'all' && t.airline !== airline) return false;
-      if (trip !== 'all' && !t.segments.some((s) => s.trip === trip)) return false;
-      if (status !== 'all' && t.ticket_status !== status) return false;
-      return true;
-    });
-  }, [tickets, flyFrom, flyTo, bookFrom, bookTo, airline, trip, status]);
+  useEffect(() => {
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      // Chỉ lấy chặng bay thuộc vé CỦA USER NÀY (không phải toàn hệ thống).
+      const trips = await getHeldTicketTripOptions(user.id);
+      setTripOptions(trips);
+    })();
+  }, []);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
+  // Đổi filter -> quay về trang 1.
   useEffect(() => {
     setPage(1);
   }, [flyFrom, flyTo, bookFrom, bookTo, airline, trip, status]);
@@ -123,12 +107,6 @@ export default function CartPage() {
     }
   };
 
-  const isExpireRed = (expire?: string | null) => {
-    if (!expire) return false;
-    const diff = new Date(expire).getTime() - Date.now();
-    return diff > 0 && diff < 2 * 60 * 60 * 1000;
-  };
-
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gray-50">
@@ -146,7 +124,7 @@ export default function CartPage() {
               </h1>
             </div>
             <div className="text-sm text-gray-600">
-              Tổng cộng <span className="font-semibold">{filtered.length}</span> trường hợp
+              Tổng cộng <span className="font-semibold">{totalCount.toLocaleString('en-US')}</span> trường hợp
             </div>
           </div>
 
@@ -212,116 +190,24 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="bg-white rounded-lg border overflow-x-auto">
-            <div className="px-3 py-2 text-sm font-semibold border-b">
-              Tổng cộng {filtered.length} trường hợp
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">STT</TableHead>
-                  <TableHead>PNR</TableHead>
-                  <TableHead>Trạng Thái</TableHead>
-                  <TableHead>Nhân viên</TableHead>
-                  <TableHead>Hành trình lựa chọn</TableHead>
-                  <TableHead>Ngày đặt chỗ</TableHead>
-                  <TableHead className="text-center">Khách</TableHead>
-                  <TableHead>Hành khách</TableHead>
-                  <TableHead className="text-right">Tổng bill giá gốc</TableHead>
-                  <TableHead>TL (Hạn thanh toán)</TableHead>
-                  <TableHead>Hãng</TableHead>
-                  <TableHead>Hành động</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading && (
-                  <TableRow><TableCell colSpan={12} className="text-center py-6 text-gray-500">Đang tải...</TableCell></TableRow>
-                )}
-                {!loading && error && (
-                  <TableRow><TableCell colSpan={12} className="text-center py-6 text-red-600">{error}</TableCell></TableRow>
-                )}
-                {!loading && !error && pageData.length === 0 && (
-                  <TableRow><TableCell colSpan={12} className="text-center py-6 text-gray-500">Không có dữ liệu</TableCell></TableRow>
-                )}
-                {pageData.map((t, i) => {
-                  const idx = (page - 1) * PAGE_SIZE + i + 1;
-                  const namelistStr = t.namelist.join(', ');
-                  const canCancel = t.ticket_status === 'holding';
-                  return (
-                    <TableRow key={t.id}>
-                      <TableCell>{idx}</TableCell>
-                      <TableCell>
-                        <button
-                          className="font-mono font-bold hover:underline"
-                          onClick={() => setDetailTicket(t)}
-                        >
-                          {t.pnr}
-                        </button>
-                      </TableCell>
-                      <TableCell><StatusBadge status={t.ticket_status} /></TableCell>
-                      <TableCell className="text-xs whitespace-nowrap">
-                        {t.employee_name || <span className="text-gray-400">—</span>}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {t.segments.map((s) => (
-                          <div key={s.id} className="text-orange-500 font-mono">
-                            {s.trip} / {s.departure_date} {s.departure_time}
-                          </div>
-                        ))}
-                      </TableCell>
-                      <TableCell className="text-xs whitespace-nowrap">
-                        {formatDateTime(t.created_at)}
-                      </TableCell>
-                      <TableCell className="text-center">{t.number_person}</TableCell>
-                      <TableCell className="text-xs max-w-[180px]">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="truncate">{namelistStr}</div>
-                          </TooltipTrigger>
-                          <TooltipContent>{namelistStr}</TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {t.total_price !== null
-                          ? formatMoney(t.total_price)
-                          : <span className="text-gray-400">—</span>}
-                      </TableCell>
-                      <TableCell className={`text-xs whitespace-nowrap ${isExpireRed(t.expire_date) ? 'text-red-600' : ''}`}>
-                        {formatDateTime(t.expire_date)}
-                      </TableCell>
-                      <TableCell><AirlineBadge airline={t.airline} /></TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDetailTicket(t)}>
-                            <Info className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyPnr(t.pnr)}>
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                          {canCancel && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600 hover:text-red-700" onClick={() => onCancel(t.id)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          <CartTicketsTable
+            tickets={tickets}
+            loading={loading}
+            error={error}
+            startIndex={(page - 1) * PAGE_SIZE}
+            onOpenDetail={setDetailTicket}
+            onCopyPnr={copyPnr}
+            onCancel={onCancel}
+          />
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-3 text-sm">
-            <div>Tổng cộng <span className="font-semibold">{filtered.length}</span> trường hợp</div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹</Button>
-              <span>{page} / {totalPages}</span>
-              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>›</Button>
-            </div>
-          </div>
+          <HeldTicketsPagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            totalCount={totalCount}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            disabled={loading}
+          />
         </div>
 
         <HeldTicketDetailModal
