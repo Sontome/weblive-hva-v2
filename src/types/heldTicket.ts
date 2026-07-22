@@ -55,6 +55,30 @@ export interface HoldTicketPayload {
   total_price?: number | null;
 }
 
+/**
+ * Bộ lọc dùng cho danh sách Held Tickets phân trang (server-side).
+ * Tất cả optional — không set nghĩa là "không lọc theo trường đó".
+ */
+export interface HeldTicketsFilters {
+  /** Chỉ áp dụng khi gọi ở chế độ admin. 'all' = mọi user. */
+  userId?: string;
+  airline?: 'all' | Airline;
+  status?: 'all' | TicketStatus;
+  /** Lọc theo chặng bay (khớp bất kỳ segment nào của vé). 'all' = mọi chặng. */
+  trip?: string;
+  /** Ngày đặt chỗ (created_at), dạng 'YYYY-MM-DD'. */
+  bookFrom?: string;
+  bookTo?: string;
+  /** Ngày bay (departure_date của segment đầu tiên), dạng 'YYYY-MM-DD'. */
+  flyFrom?: string;
+  flyTo?: string;
+}
+
+export interface HeldTicketsPageResult {
+  tickets: HeldTicket[];
+  totalCount: number;
+}
+
 export interface AirlineHeldBookingResponse {
   pnr: string;
   tongbillgiagoc?: number;
