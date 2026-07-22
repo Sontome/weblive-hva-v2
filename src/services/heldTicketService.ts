@@ -2,6 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 import type {
   HeldTicket,
   HeldTicketSegment,
+  HeldTicketsFilters,
+  HeldTicketsPageResult,
   HoldTicketPayload,
   TicketStatus,
   Airline,
@@ -184,39 +186,169 @@ export async function saveHeldTicket(payload: HoldTicketPayload): Promise<HeldTi
   return normalizeTicket(inserted as HeldTicketRow, (segs || []) as HeldSegmentRow[]);
 }
 
-async function attachSegments(list: HeldTicketRow[]): Promise<HeldTicket[]> {
-  if (list.length === 0) return [];
-  const ids = list.map((t) => t.id);
-  const { data: segs, error: segErr } = await supabase
-    .from('held_ticket_segments')
-    .select('*')
-    .in('held_ticket_id', ids);
-  if (segErr) throw new Error(segErr.message);
-  const segRows = (segs || []) as HeldSegmentRow[];
-  return list.map((t) => normalizeTicket(t, segRows));
+// ---------------------------------------------------------------------------
+// Phân trang server-side cho danh sách Held Tickets (admin & user)
+// ---------------------------------------------------------------------------
+// Thay vì (1) tải toàn bộ held_tickets rồi (2) query held_ticket_segments
+// bằng `.in('held_ticket_id', <toàn bộ id>)`, các hàm dưới đây:
+//   - Chỉ lấy đúng dữ liệu của TRANG hiện tại (`.range(from, to)`).
+//   - Ưu tiên dùng relationship embed của Supabase/PostgREST
+//     (`held_ticket_segments(*)`) để lấy segment CÙNG lúc với ticket,
+//     trong 1 request duy nhất — không còn query `.in()` riêng.
+//   - Khi cần lọc theo trường của segment (ngày bay / chặng bay), việc lọc
+//     được đẩy xuống DB bằng inner-join filter (`held_ticket_segments!inner`),
+//     và bước lấy đầy đủ segment sau đó luôn bị giới hạn theo đúng số vé của
+//     trang hiện tại (tối đa `pageSize` id) — không bao giờ là hàng nghìn id.
+
+type HeldTicketWithSegments = HeldTicketRow & {
+  held_ticket_segments: HeldSegmentRow[];
+};
+
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase's chainable
+   query builder type changes shape with every .eq()/.gte() call; typing this
+   precisely isn't practical for a small internal filter-building helper. */
+/** Áp các filter dùng chung (cột trực tiếp trên held_tickets) vào 1 query builder. */
+function applyCommonFilters(
+  query: any,
+  opts: { scopedUserId?: string; filters: HeldTicketsFilters }
+): any {
+  let q = query;
+  const { scopedUserId, filters } = opts;
+  if (scopedUserId) q = q.eq('user_id', scopedUserId);
+  if (filters.airline && filters.airline !== 'all') q = q.eq('airline', filters.airline);
+  if (filters.status && filters.status !== 'all') q = q.eq('ticket_status', filters.status);
+  if (filters.bookFrom) q = q.gte('created_at', `${filters.bookFrom}T00:00:00`);
+  if (filters.bookTo) q = q.lte('created_at', `${filters.bookTo}T23:59:59.999`);
+  return q;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+const SEGMENTS_EMBED = 'held_ticket_segments(*)';
+
+/**
+ * Lấy 1 trang Held Tickets theo filter, server-side pagination.
+ * - `options.admin = false`: chỉ lấy vé của user hiện tại (dùng cho CartPage).
+ * - `options.admin = true`: lấy toàn hệ thống, có thể lọc theo `filters.userId`.
+ */
+export async function getHeldTicketsPage(
+  filters: HeldTicketsFilters,
+  page: number,
+  pageSize: number,
+  options: { admin: boolean } = { admin: false }
+): Promise<HeldTicketsPageResult> {
+  const { admin } = options;
+
+  let scopedUserId: string | undefined;
+  if (!admin) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { tickets: [], totalCount: 0 };
+    scopedUserId = user.id;
+  } else if (filters.userId && filters.userId !== 'all') {
+    scopedUserId = filters.userId;
+  }
+
+  const hasSegmentFilter =
+    !!filters.flyFrom || !!filters.flyTo || (!!filters.trip && filters.trip !== 'all');
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  if (!hasSegmentFilter) {
+    // Trường hợp phổ biến nhất: 1 request duy nhất, join segment qua
+    // relationship — không còn request .in() riêng cho segment nữa.
+    let query = supabase.from('held_tickets').select(`*, ${SEGMENTS_EMBED}`, {
+      count: 'exact',
+    });
+    query = applyCommonFilters(query, { scopedUserId, filters });
+    query = query.order('created_at', { ascending: false }).range(from, to);
+
+    const { data, error, count } = await query;
+    if (error) throw new Error(error.message);
+    const rows = (data || []) as unknown as HeldTicketWithSegments[];
+    return {
+      tickets: rows.map((r) => normalizeTicket(r, r.held_ticket_segments || [])),
+      totalCount: count ?? 0,
+    };
+  }
+
+  // Có lọc theo dữ liệu nằm ở segment (ngày bay / chặng bay): PostgREST
+  // không thể vừa lọc theo child table vừa embed ĐẦY ĐỦ children trong
+  // cùng 1 query (dùng !inner để lọc thì kết quả embed cũng bị cắt theo
+  // điều kiện lọc). Nên tách 2 bước, nhưng bước 2 luôn bị chặn ở tối đa
+  // `pageSize` id (mặc định 100) — không bao giờ là toàn bộ bảng.
+
+  // Bước 1: xác định id + tổng số vé khớp điều kiện (filter đẩy xuống DB).
+  let matchQuery = supabase
+    .from('held_tickets')
+    .select('id, created_at, held_ticket_segments!inner(departure_date,trip)', {
+      count: 'exact',
+    });
+  matchQuery = applyCommonFilters(matchQuery, { scopedUserId, filters });
+  if (filters.trip && filters.trip !== 'all') {
+    matchQuery = matchQuery.eq('held_ticket_segments.trip', filters.trip);
+  }
+  if (filters.flyFrom) {
+    matchQuery = matchQuery.gte('held_ticket_segments.departure_date', filters.flyFrom);
+  }
+  if (filters.flyTo) {
+    matchQuery = matchQuery.lte('held_ticket_segments.departure_date', filters.flyTo);
+  }
+  matchQuery = matchQuery.order('created_at', { ascending: false }).range(from, to);
+
+  const { data: matchRows, error: matchErr, count } = await matchQuery;
+  if (matchErr) throw new Error(matchErr.message);
+
+  // 1 vé có nhiều segment nên inner-join có thể trả trùng id (vd: cả 2
+  // chặng khứ hồi đều rơi trong khoảng ngày lọc) -> dedupe, giữ thứ tự.
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const r of (matchRows || []) as { id: string }[]) {
+    if (!seen.has(r.id)) {
+      seen.add(r.id);
+      ids.push(r.id);
+    }
+  }
+  if (ids.length === 0) return { tickets: [], totalCount: count ?? 0 };
+
+  // Bước 2: lấy đầy đủ vé + TOÀN BỘ segment (không chỉ segment khớp filter)
+  // cho đúng các id ở trên. `ids.length <= pageSize` luôn đúng.
+  const { data: fullRows, error: fullErr } = await supabase
+    .from('held_tickets')
+    .select(`*, ${SEGMENTS_EMBED}`)
+    .in('id', ids);
+  if (fullErr) throw new Error(fullErr.message);
+
+  const byId = new Map(
+    ((fullRows || []) as unknown as HeldTicketWithSegments[]).map((r) => [r.id, r])
+  );
+  // Giữ đúng thứ tự (created_at desc) đã sort/phân trang ở bước 1.
+  const ordered = ids.map((id) => byId.get(id)).filter((r): r is HeldTicketWithSegments => !!r);
+
+  return {
+    tickets: ordered.map((r) => normalizeTicket(r, r.held_ticket_segments || [])),
+    totalCount: count ?? 0,
+  };
 }
 
-export async function getMyHeldTickets(): Promise<HeldTicket[]> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-  const { data, error } = await supabase
-    .from('held_tickets')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-  if (error) throw new Error(error.message);
-  return attachSegments((data || []) as HeldTicketRow[]);
-}
-
-export async function getAllHeldTickets(): Promise<HeldTicket[]> {
-  const { data, error } = await supabase
-    .from('held_tickets')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw new Error(error.message);
-  return attachSegments((data || []) as HeldTicketRow[]);
+/**
+ * Danh sách chặng bay (trip) để đổ vào dropdown filter.
+ * Chỉ select đúng 1 cột `trip` — nhẹ hơn nhiều so với việc suy ra option
+ * từ toàn bộ dữ liệu ticket+segment đã tải như cách cũ.
+ * `userId`: nếu truyền vào (vd: trang Giỏ hàng cá nhân) thì chỉ lấy chặng
+ * bay thuộc các vé của đúng user đó (join `held_tickets!inner`).
+ * (Nếu muốn tối ưu hơn nữa, có thể thay bằng 1 view/RPC `SELECT DISTINCT`.)
+ */
+export async function getHeldTicketTripOptions(userId?: string): Promise<string[]> {
+  const query = supabase.from('held_ticket_segments');
+  const built = userId
+    ? query.select('trip, held_tickets!inner(user_id)').eq('held_tickets.user_id', userId)
+    : query.select('trip');
+  const { data, error } = await built.limit(5000);
+  if (error) return [];
+  const set = new Set<string>((data || []).map((r: { trip: string }) => r.trip));
+  return Array.from(set).sort();
 }
 
 export async function getHeldTicketByPNR(pnr: string): Promise<HeldTicket | null> {
