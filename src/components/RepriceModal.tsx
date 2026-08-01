@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SunRepricePanel } from '@/components/reprice/SunRepricePanel';
 
 interface RepriceModalProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ interface PriceComparison {
 }
 
 type ModalStep = 'check' | 'reprice' | 'result';
+type RepriceAirline = 'VNA' | 'SUN' | null;
 
 export const RepriceModal: React.FC<RepriceModalProps> = ({
   isOpen,
@@ -57,6 +59,7 @@ export const RepriceModal: React.FC<RepriceModalProps> = ({
   const [pnrResults, setPnrResults] = useState<PNRResult[]>([]);
   const [repriceResults, setRepriceResults] = useState<PNRRepriceResult[]>([]);
   const [showDetails, setShowDetails] = useState<Record<string, boolean>>({});
+  const [airline, setAirline] = useState<RepriceAirline>(null);
 
   const handleClose = () => {
     setPnrInput('');
@@ -65,6 +68,7 @@ export const RepriceModal: React.FC<RepriceModalProps> = ({
     setPnrResults([]);
     setRepriceResults([]);
     setShowDetails({});
+    setAirline(null);
     onClose();
   };
 
@@ -275,10 +279,36 @@ export const RepriceModal: React.FC<RepriceModalProps> = ({
       <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-bold text-primary">
-            Reprice PNR
+            {airline === 'SUN' ? 'Reprice PNR - SunPQ' : airline === 'VNA' ? 'Reprice PNR - Vietnam Airlines' : 'Reprice PNR'}
           </DialogTitle>
         </DialogHeader>
-        
+
+        {airline === null && (
+          <div className="grid grid-cols-2 gap-3 py-6">
+            <Button variant="outline" className="h-24 flex-col gap-1" onClick={() => setAirline('VNA')}>
+              <span className="text-base font-bold">VNA</span>
+              <span className="text-xs text-muted-foreground">Vietnam Airlines</span>
+            </Button>
+            <Button variant="outline" className="h-24 flex-col gap-1" onClick={() => setAirline('SUN')}>
+              <span className="text-base font-bold">SUN</span>
+              <span className="text-xs text-muted-foreground">Sun PhuQuoc Airways</span>
+            </Button>
+          </div>
+        )}
+
+        {airline !== null && (
+          <button
+            type="button"
+            onClick={() => setAirline(null)}
+            className="text-xs text-muted-foreground hover:text-foreground self-start"
+          >
+            ← Chọn hãng khác
+          </button>
+        )}
+
+        {airline === 'SUN' && <SunRepricePanel />}
+
+        {airline === 'VNA' && (
         <div className="space-y-6 py-4">
           <div>
             <Label htmlFor="pnr-input">Mã PNR</Label>
@@ -503,6 +533,7 @@ export const RepriceModal: React.FC<RepriceModalProps> = ({
             </>
           )}
         </div>
+        )}
       </DialogContent>
     </Dialog>
   );
