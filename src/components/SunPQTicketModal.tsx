@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, X, Plane } from 'lucide-react';
 import { checkSunPQPnr } from '@/services/sunpqService';
+import { beginSunReprice } from '@/services/sunRepriceService';
 import { toPng } from 'html-to-image';
 const sunpqLogo = "/icon/sunpq-logo.png";
 import { Camera } from 'lucide-react';
@@ -71,7 +72,7 @@ interface Segment {
   aircraft_info?: { type?: string };
 }
 
-const SegmentCard: React.FC<{ seg: Segment }> = ({ seg }) => {
+const SegmentCard: React.FC<{ seg: Segment; baggageNote?: string }> = ({ seg, baggageNote }) => {
   const fromName = AIRPORT_NAMES[seg.departure] || seg.departure;
   const toName = AIRPORT_NAMES[seg.arrival] || seg.arrival;
   const depDate = seg.departure_info.datetime;
@@ -83,8 +84,11 @@ const SegmentCard: React.FC<{ seg: Segment }> = ({ seg }) => {
         <img src={sunpqLogo} alt="SUN PhuQuoc" className="h-7 object-contain" crossOrigin="anonymous" />
         <div className="font-semibold text-gray-800">
           {fromName} → {toName}
+          {baggageNote && <span className="ml-2 font-bold text-red-600">{baggageNote}</span>}
         </div>
-        <div className="font-medium text-gray-700">{fmtDate(depDate)}</div>
+        <div className="font-medium text-gray-700">
+          {fmtDate(depDate)}
+        </div>
       </div>
       {/* Body */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-white text-sm">
@@ -113,6 +117,8 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any | null>(null);
+  const [baggageMap, setBaggageMap] = useState<Record<string, string>>({});
+  const [baggageError, setBaggageError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const captureRef = useRef<HTMLDivElement>(null);
   const [capturing, setCapturing] = useState(false);
@@ -136,6 +142,8 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
     setPnr('');
     setData(null);
     setError(null);
+    setBaggageMap({});
+    setBaggageError(false);
   };
 
   const handleClose = () => {
@@ -152,6 +160,8 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
     setError(null);
     setIsLoading(true);
     setData(null);
+    setBaggageMap({});
+    setBaggageError(false);
     try {
       const res = await checkSunPQPnr(code);
       if (!res?.success || !res?.data) {
@@ -163,6 +173,19 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
         const d = res.data as { tongbillgiagoc?: number; paymentstatus?: boolean };
         if (d.tongbillgiagoc) await syncTicketPrice(code, d.tongbillgiagoc, Boolean(d.paymentstatus));
       } catch {}
+      // Lấy thông tin hành lý (không ảnh hưởng hiển thị vé nếu lỗi)
+      try {
+        const bag = await beginSunReprice(code);
+        const map: Record<string, string> = {};
+        (bag?.listhanhly || []).forEach((h) => {
+          if ((h?.passenger_type || '').toUpperCase() === 'VFR' && h?.airport) {
+            map[h.airport.toUpperCase()] = '46kg';
+          }
+        });
+        setBaggageMap(map);
+      } catch {
+        setBaggageError(true);
+      }
     } catch (e: any) {
       setError(e?.message || 'Không tìm thấy vé hoặc hệ thống lỗi.');
     } finally {
@@ -239,6 +262,9 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
                 </Button>
               </div>
 
+              {baggageError && (
+                <p className="text-xs text-amber-600">Chưa lấy được thông tin hành lý</p>
+              )}
               <div ref={captureRef} className="space-y-3 bg-white p-3 rounded">
                 {/* Hành khách - lên trên */}
                 {Array.isArray(data.passengers) && data.passengers.length > 0 && (
@@ -275,13 +301,17 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
                 {Array.isArray(data.chieudi) && data.chieudi.length > 0 && (
                   <div>
                     <h4 className="text-sm font-bold text-gray-700 mb-2">Chiều đi</h4>
-                    {data.chieudi.map((s: Segment, i: number) => <SegmentCard key={`out-${i}`} seg={s} />)}
+                    {data.chieudi.map((s: Segment, i: number) => (
+                      <SegmentCard key={`out-${i}`} seg={s} baggageNote={baggageMap[(s.departure || '').toUpperCase()]} />
+                    ))}
                   </div>
                 )}
                 {Array.isArray(data.chieuve) && data.chieuve.length > 0 && (
                   <div>
                     <h4 className="text-sm font-bold text-gray-700 mb-2">Chiều về</h4>
-                    {data.chieuve.map((s: Segment, i: number) => <SegmentCard key={`ret-${i}`} seg={s} />)}
+                    {data.chieuve.map((s: Segment, i: number) => (
+                      <SegmentCard key={`ret-${i}`} seg={s} baggageNote={baggageMap[(s.departure || '').toUpperCase()]} />
+                    ))}
                   </div>
                 )}
               </div>
