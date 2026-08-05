@@ -113,9 +113,12 @@ export const SearchHistorySidebar: React.FC<Props> = ({ open, onClose, onView, h
               </div>
 
               <div className="mt-2 space-y-1">
-                <AirlineRow code="VN" price={s.cheapestVN} status={s.statusVN} />
+                {/* <AirlineRow code="VN" price={s.cheapestVN} status={s.statusVN} />
                 <AirlineRow code="VJ" price={s.cheapestVJ} status={s.statusVJ} />
-                <AirlineRow code="SUN" price={s.cheapestSUN} status={s.statusSUN} />
+                <AirlineRow code="SUN" price={s.cheapestSUN} status={s.statusSUN} /> */}
+                <AirlineRow code="VN" price="" status={s.statusVN} />
+                <AirlineRow code="VJ" price="" status={s.statusVJ} />
+                <AirlineRow code="SUN" price="" status={s.statusSUN} />
               </div>
 
               <Button size="sm" variant="outline" className="mt-3 w-full" onClick={() => onView(s)}>
