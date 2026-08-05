@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FlightSearchForm from '../components/FlightSearchForm';
 import FlightResults from '../components/FlightResults';
@@ -25,6 +25,18 @@ import { shouldSkipVietjet } from '../utils/flightValidation';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { usePriceConfigs } from '@/hooks/usePriceConfigs';
+import { SearchHistorySidebar } from '../components/searchCache/SearchHistorySidebar';
+import { CacheWarningDialog } from '../components/searchCache/CacheWarningDialog';
+import {
+  buildSearchKey,
+  cleanupCache,
+  extractCheapest,
+  findValidSummaryByKey,
+  loadSnapshotDetail,
+  minutesAgo,
+  saveSnapshot,
+} from '@/lib/searchCache/cache';
+import type { AirlineStatus, SnapshotSummary } from '@/lib/searchCache/types';
 
 interface FlightSearchData {
   departure: string;
@@ -129,6 +141,54 @@ const Index = () => {
   const [isLoadingLowFare, setIsLoadingLowFare] = useState(false);
   const [lastSearchData, setLastSearchData] = useState<FlightSearchData | null>(null);
 
+  // ----- Search snapshot cache (enhancement layer, does not alter search flow) -----
+  const [showHistory, setShowHistory] = useState(false);
+  const [cachedInfo, setCachedInfo] = useState<{ id: string; createdAt: number } | null>(null);
+  const [cacheWarning, setCacheWarning] = useState<{
+    summary: SnapshotSummary;
+    pending: FlightSearchData;
+  } | null>(null);
+  const latestSearchKeyRef = useRef<string>('');
+
+  useEffect(() => {
+    void cleanupCache();
+  }, []);
+
+  const buildKeyParts = (data: FlightSearchData) => ({
+    origin: data.departure,
+    destination: data.arrival,
+    depart: data.departureDate,
+    return: data.returnDate,
+    adult: data.adults,
+    child: data.children,
+    infant: data.infants,
+    cabin: '',
+    tripType: data.tripType,
+  });
+
+  const handleViewSnapshot = async (summary: SnapshotSummary) => {
+    const detail = await loadSnapshotDetail(summary.id);
+    if (!detail) {
+      toast.error('Không tải được kết quả đã lưu');
+      return;
+    }
+    latestSearchKeyRef.current = '';
+    const extra = (detail.extra ?? {}) as Record<string, unknown>;
+    setIsLoading(false);
+    setHasSearched(true);
+    setVnaResults((detail.vnResult as any[]) || []);
+    setVjetResults((detail.vjResult as any[]) || []);
+    setSunpqResults((detail.sunResult as any[]) || []);
+    setSunpqLowerFare(extra.sunpqLowerFare ?? null);
+    setSearchData(detail.fullSearchRequest as FlightSearchData);
+    setApiStatus((extra.apiStatus as { vj: string; vna: string }) || { vj: 'success', vna: 'success' });
+    setSearchMessages([]);
+    setLowFareDeparture((extra.lowFareDeparture as LowFareDay[]) || []);
+    setLowFareReturn((extra.lowFareReturn as LowFareDay[]) || []);
+    setCachedInfo({ id: detail.id, createdAt: detail.createdAt });
+    setShowHistory(true);
+  };
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -231,6 +291,19 @@ const Index = () => {
 
   const handleSearch = async (searchData: FlightSearchData) => {
     console.log('Searching with data:', searchData);
+    setCachedInfo(null);
+    const snapshotKeyParts = buildKeyParts(searchData);
+    const snapshotKey = buildSearchKey(snapshotKeyParts);
+    latestSearchKeyRef.current = snapshotKey;
+    const captured = {
+      vj: [] as any[],
+      vna: [] as any[],
+      sun: [] as any[],
+      lowerFare: null as any,
+      statusVJ: 'pending' as AirlineStatus,
+      statusVN: 'pending' as AirlineStatus,
+      statusSUN: 'pending' as AirlineStatus,
+    };
     setIsLoading(true);
     setSearchResults([]);
     setAllResults([]);
@@ -260,6 +333,28 @@ const Index = () => {
       if (completedAPIs === totalAPIs) {
         console.log('Both APIs completed, stopping loading');
         setIsLoading(false);
+        // Snapshot only after every airline finished and conditions did not change
+        const allFailed =
+          captured.statusVJ === 'error' && captured.statusVN === 'error' && captured.statusSUN === 'error';
+        if (latestSearchKeyRef.current === snapshotKey && !allFailed) {
+          void saveSnapshot({
+            keyParts: snapshotKeyParts,
+            fullSearchRequest: searchData,
+            vnResult: captured.vna,
+            vjResult: captured.vj,
+            sunResult: captured.sun,
+            extra: {
+              sunpqLowerFare: captured.lowerFare,
+              apiStatus: { vj: captured.statusVJ, vna: captured.statusVN },
+            },
+            statusVN: captured.statusVN,
+            statusVJ: captured.statusVJ,
+            statusSUN: captured.statusSUN,
+            cheapestVN: extractCheapest(captured.vna, ['giá_vé', 'giá_vé_gốc']),
+            cheapestVJ: extractCheapest(captured.vj, ['giá_vé', 'giá_vé_gốc']),
+            cheapestSUN: extractCheapest(captured.sun, ['giá_vé', 'giá_vé_gốc', 'tổng_giá', 'giá']),
+          });
+        }
       }
     };
 
@@ -270,6 +365,7 @@ const Index = () => {
       if (result.isDomesticError) {
         setVietjetDomesticError(true);
         setApiStatus(prev => ({ ...prev, vj: 'domestic_error' }));
+        captured.statusVJ = 'domestic_error';
         toast.error(result.error, {
           style: {
             color: 'red',
@@ -289,15 +385,19 @@ const Index = () => {
         const vjBody = result.body.map((f: any) => ({ ...f, freebag }));
         setVjetResults(vjBody);
         setApiStatus(prev => ({ ...prev, vj: 'success' }));
+        captured.vj = vjBody;
+        captured.statusVJ = 'success';
         
         const flightTypeText = result.flightType === 'direct' ? 'bay thẳng' : 'nối chuyến';
         toast.success(`Tìm thấy ${result.body.length} chuyến bay VietJet (${flightTypeText})`);
       } else if (result.status_code === 404) {
         setApiStatus(prev => ({ ...prev, vj: 'no_flights' }));
+        captured.statusVJ = 'no_flights';
         setSearchMessages(prev => [...prev, 'Không có chuyến bay VietJet']);
         toast.info('Không có chuyến bay VietJet cho tuyến này');
       } else {
         setApiStatus(prev => ({ ...prev, vj: 'error' }));
+        captured.statusVJ = 'error';
         setSearchMessages(prev => [...prev, 'Không có chuyến bay VietJet']);
         toast.error('Lỗi tìm kiếm VietJet');
       }
@@ -316,6 +416,8 @@ const Index = () => {
         console.log('Adding all VNA flights without filtering');
         setVnaResults(result.body);
         setApiStatus(prev => ({ ...prev, vna: 'success' }));
+        captured.vna = result.body;
+        captured.statusVN = 'success';
         
         // Kiểm tra có chuyến bay thẳng hay không
         const hasDirectFlights = result.body.some((flight: any) => {
@@ -345,11 +447,13 @@ const Index = () => {
         console.log('VNA: No flights found, setting empty results');
         setVnaResults([]); // Set empty array to ensure UI displays the no flights message
         setApiStatus(prev => ({ ...prev, vna: 'no_flights' }));
+        captured.statusVN = 'no_flights';
         toast.info('Không có chuyến bay Vietnam Airlines cho tuyến này');
       } else {
         console.log('VNA: Error occurred, setting empty results');
         setVnaResults([]); // Set empty array to ensure UI displays the no flights message
         setApiStatus(prev => ({ ...prev, vna: 'error' }));
+        captured.statusVN = 'error';
         toast.error('Lỗi tìm kiếm Vietnam Airlines');
       }
       
@@ -359,11 +463,15 @@ const Index = () => {
     const onSunPQResult = (result: any) => {
       console.log('=== SUNPQ RESULT DEBUG ===', result);
       setSunpqLowerFare(result?.lowerfare || null);
+      captured.lowerFare = result?.lowerfare || null;
       if (result.status_code === 200 && result.body && result.body.length > 0) {
         setSunpqResults(result.body);
+        captured.sun = result.body;
+        captured.statusSUN = 'success';
         toast.success(`Tìm thấy ${result.body.length} chuyến bay SunPQ`);
       } else {
         setSunpqResults([]);
+        captured.statusSUN = result?.status_code === 200 ? 'no_flights' : 'error';
       }
       checkIfShouldStopLoading();
     };
@@ -375,6 +483,16 @@ const Index = () => {
       toast.error('Có lỗi xảy ra khi tìm kiếm chuyến bay');
       setIsLoading(false);
     }
+  };
+
+  // Wrapper used by the search form: warns when a fresh snapshot already exists.
+  const handleSearchRequest = async (data: FlightSearchData) => {
+    const existing = await findValidSummaryByKey(buildSearchKey(buildKeyParts(data)));
+    if (existing) {
+      setCacheWarning({ summary: existing, pending: data });
+      return;
+    }
+    void handleSearch(data);
   };
 
   const handleAirlineChange = (airline: 'all' | 'VJ' | 'VNA') => {
@@ -471,6 +589,26 @@ const Index = () => {
         isOpen={showAddPNRModal}
         onClose={() => setShowAddPNRModal(false)}
       />
+      <SearchHistorySidebar
+        open={showHistory}
+        onClose={() => setShowHistory(false)}
+        onView={(summary) => void handleViewSnapshot(summary)}
+        highlightId={cachedInfo?.id ?? null}
+      />
+      <CacheWarningDialog
+        open={!!cacheWarning}
+        minutes={cacheWarning ? minutesAgo(cacheWarning.summary.createdAt) : 0}
+        onViewCached={() => {
+          const summary = cacheWarning?.summary;
+          setCacheWarning(null);
+          if (summary) void handleViewSnapshot(summary);
+        }}
+        onSearchAgain={() => {
+          const pending = cacheWarning?.pending;
+          setCacheWarning(null);
+          if (pending) void handleSearch(pending);
+        }}
+      />
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-3 sm:py-6">
@@ -493,6 +631,14 @@ const Index = () => {
                 className="px-2 sm:px-4 text-xs sm:text-sm"
               >
                 📊 Attendance Reports
+              </Button>
+              <Button
+                onClick={() => setShowHistory(true)}
+                variant="outline"
+                size="sm"
+                className="px-2 sm:px-4 text-xs sm:text-sm"
+              >
+                🕘 Lịch sử tìm kiếm
               </Button>
             </div>
           </div>
@@ -583,7 +729,14 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <FlightSearchForm onSearch={handleSearch} isLoading={isLoading} customerType={customerType} priceConfigs={priceConfigs} />
+        <FlightSearchForm onSearch={handleSearchRequest} isLoading={isLoading} customerType={customerType} priceConfigs={priceConfigs} />
+
+        {cachedInfo && (
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <span className="rounded-full bg-amber-500 px-2 py-0.5 font-semibold text-white">Cached Result</span>
+            <span>Được lưu {minutesAgo(cachedInfo.createdAt)} phút trước · Giá chỉ mang tính tham khảo.</span>
+          </div>
+        )}
         
         <div className="flex flex-wrap gap-4 mb-6">
           <AirlineFilter 
