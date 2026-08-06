@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, History, Eye, Trash2 } from 'lucide-react';
+import { X, History, Eye, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSnapshotSummaries } from '@/lib/searchCache/hooks';
 import { deleteSnapshot, minutesAgo } from '@/lib/searchCache/cache';
@@ -8,6 +8,7 @@ import type { AirlineStatus, SnapshotSummary } from '@/lib/searchCache/types';
 interface Props {
   open: boolean;
   onClose: () => void;
+  onOpen?: () => void;
   onView: (summary: SnapshotSummary) => void;
   highlightId?: string | null;
 }
@@ -37,7 +38,7 @@ const statusClass: Record<AirlineStatus, string> = {
   domestic_error: 'text-destructive',
 };
 
-const AirlineRow: React.FC<{ code: string; price: number | null; status: AirlineStatus }> = ({
+const AirlineRow: React.FC<{ code: string; price?: number | null; status: AirlineStatus }> = ({
   code,
   price,
   status,
@@ -45,17 +46,27 @@ const AirlineRow: React.FC<{ code: string; price: number | null; status: Airline
   <div className="flex items-center justify-between text-xs">
     <span className="font-semibold">{code}</span>
     <span className="flex items-center gap-2">
-      <span className="tabular-nums">{formatPrice(price)}</span>
+      {price !== undefined && <span className="tabular-nums">{formatPrice(price)}</span>}
       <span className={statusClass[status]}>{statusLabel[status]}</span>
     </span>
   </div>
 );
 
-export const SearchHistorySidebar: React.FC<Props> = ({ open, onClose, onView, highlightId }) => {
+export const SearchHistorySidebar: React.FC<Props> = ({ open, onClose, onOpen, onView, highlightId }) => {
   const summaries = useSnapshotSummaries(open);
 
   return (
     <>
+      <button
+        type="button"
+        aria-label={open ? 'Ẩn lịch sử tìm kiếm' : 'Hiện lịch sử tìm kiếm'}
+        onClick={() => (open ? onClose() : onOpen?.())}
+        className={`fixed top-1/2 z-50 flex h-14 w-6 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 bg-background shadow-md transition-all duration-300 hover:bg-accent ${
+          open ? 'right-[340px] max-[420px]:right-[92vw]' : 'right-0'
+        }`}
+      >
+        {open ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+      </button>
       <div
         aria-hidden={!open}
         onClick={onClose}
@@ -116,9 +127,9 @@ export const SearchHistorySidebar: React.FC<Props> = ({ open, onClose, onView, h
                 {/* <AirlineRow code="VN" price={s.cheapestVN} status={s.statusVN} />
                 <AirlineRow code="VJ" price={s.cheapestVJ} status={s.statusVJ} />
                 <AirlineRow code="SUN" price={s.cheapestSUN} status={s.statusSUN} /> */}
-                <AirlineRow code="VN" price="" status={s.statusVN} />
-                <AirlineRow code="VJ" price="" status={s.statusVJ} />
-                <AirlineRow code="SUN" price="" status={s.statusSUN} />
+                <AirlineRow code="VN" status={s.statusVN} />
+                <AirlineRow code="VJ" status={s.statusVJ} />
+                <AirlineRow code="SUN" status={s.statusSUN} />
               </div>
 
               <Button size="sm" variant="outline" className="mt-3 w-full" onClick={() => onView(s)}>
