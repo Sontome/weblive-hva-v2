@@ -174,6 +174,10 @@ const Index = () => {
     }
     latestSearchKeyRef.current = '';
     const extra = (detail.extra ?? {}) as Record<string, unknown>;
+    setShowHistory(false);
+    setIsLoading(true);
+    setHasSearched(true);
+    await new Promise((r) => setTimeout(r, 300));
     setIsLoading(false);
     setHasSearched(true);
     setVnaResults((detail.vnResult as any[]) || []);
@@ -186,7 +190,6 @@ const Index = () => {
     setLowFareDeparture((extra.lowFareDeparture as LowFareDay[]) || []);
     setLowFareReturn((extra.lowFareReturn as LowFareDay[]) || []);
     setCachedInfo({ id: detail.id, createdAt: detail.createdAt });
-    setShowHistory(true);
   };
 
   // Check authentication on mount
@@ -592,6 +595,7 @@ const Index = () => {
       <SearchHistorySidebar
         open={showHistory}
         onClose={() => setShowHistory(false)}
+        onOpen={() => setShowHistory(true)}
         onView={(summary) => void handleViewSnapshot(summary)}
         highlightId={cachedInfo?.id ?? null}
       />
