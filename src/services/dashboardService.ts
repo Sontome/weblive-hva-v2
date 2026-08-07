@@ -91,5 +91,5 @@ export async function fetchFilterOptions(): Promise<FilterOptions> {
 }
 
 export function formatVnd(v: number): string {
-  return `${Math.round(v).toLocaleString('en-US')} ₫`;
+  return `${Math.round(v).toLocaleString('en-US')} w`;
 }
