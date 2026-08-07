@@ -129,7 +129,7 @@ const AIRLINE_BAGGAGE: Record<string, { carryOn: string; checked?: string }> = {
   'OZ': { carryOn: '10kg', checked: '23kg' },
   'RS': { carryOn: '10kg', checked: '15kg' },
   'BX': { carryOn: '10kg', checked: '15kg' },
-  'WE': { carryOn: '0kg', checked: '0kg' },
+  'WE': { carryOn: '10kg', checked: '30kg' },
 };
 
 export const OtherAirlinesModal: React.FC<OtherAirlinesModalProps> = ({
