@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -122,6 +122,11 @@ export default function CartPage() {
                 <ShoppingCart className="w-5 h-5" />
                 Giỏ hàng của tôi
               </h1>
+              <Link to="/dashboard">
+                <Button variant="outline" size="sm">
+                  <BarChart2 className="w-4 h-4 mr-1" /> Dashboard
+                </Button>
+              </Link>
             </div>
             <div className="text-sm text-gray-600">
               Tổng cộng <span className="font-semibold">{totalCount.toLocaleString('en-US')}</span> trường hợp
