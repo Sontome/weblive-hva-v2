@@ -583,6 +583,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
       'OZ': { name: 'Asiana Airlines', carryOn: '10kg', checked: '23kg' },
       'RS': { name: 'Air Seoul', carryOn: '10kg', checked: '15kg' },
       'BX': { name: 'Air Busan', carryOn: '10kg', checked: '15kg' },
+      'WE': { name: 'Parata Air', carryOn: '10kg', checked: '30kg' },
     };
     // For connecting flights, show all segments with proper times
     if (outbound.số_điểm_dừng === '1') {
