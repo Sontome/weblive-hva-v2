@@ -13,6 +13,7 @@ import ShiftDashboard from "./pages/ShiftDashboard";
 import CartPage from "./pages/CartPage";
 import HeldTicketsAdminPage from "./pages/HeldTicketsAdminPage";
 import TicketRulesAdmin from "./pages/TicketRulesAdmin";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/attendance-reports/shift-dashboard" element={<ShiftDashboard />} />
           <Route path="/checkin" element={<CheckIn />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin/held-tickets" element={<HeldTicketsAdminPage />} />
           <Route path="/admin/ticket-rules" element={<TicketRulesAdmin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
