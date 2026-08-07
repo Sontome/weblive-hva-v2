@@ -688,6 +688,14 @@ const Index = () => {
               🛒 Giỏ Hàng
             </Button>
             <Button
+              onClick={() => navigate('/dashboard')}
+              variant="outline"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              📊 Dashboard
+            </Button>
+            <Button
               onClick={() => setShowRepriceModal(true)}
               variant="action-reprice"
               size="sm"
