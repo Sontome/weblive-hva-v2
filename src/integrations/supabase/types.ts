@@ -827,6 +827,49 @@ export type Database = {
         }[]
       }
       expire_support_requests: { Args: never; Returns: number }
+      get_dashboard_filter_options: {
+        Args: never
+        Returns: {
+          airlines: string[]
+          employees: string[]
+          trips: string[]
+        }[]
+      }
+      get_dashboard_stats: {
+        Args: {
+          p_airlines?: string[]
+          p_employees?: string[]
+          p_end_date: string
+          p_start_date: string
+          p_trips?: string[]
+        }
+        Returns: {
+          airline: string
+          date_bucket: string
+          employee_name: string
+          pax_sum: number
+          pnr_count: number
+          ticket_status: string
+          total_price_sum: number
+        }[]
+      }
+      get_dashboard_stats_by_trip: {
+        Args: {
+          p_airlines?: string[]
+          p_employees?: string[]
+          p_end_date: string
+          p_start_date: string
+          p_trips?: string[]
+        }
+        Returns: {
+          pax_sum: number
+          pnr_count: number
+          ticket_status: string
+          top_employee: string
+          total_price_sum: number
+          trip: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
