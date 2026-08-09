@@ -71,8 +71,18 @@ export default function Dashboard() {
   const [unit, setUnit] = useState<Unit>('PNR');
 
   const [options, setOptions] = useState({ employees: [] as string[], airlines: [] as string[], trips: [] as string[] });
-  const [rows, setRows] = useState<StatRow[]>([]);
-  const [tripRows, setTripRows] = useState<TripStatRow[]>([]);
+  const [allRows, setRows] = useState<StatRow[]>([]);
+  const [allTripRows, setTripRows] = useState<TripStatRow[]>([]);
+  const [issuedOnly, setIssuedOnly] = useState(false);
+  const isIssued = (s: string) => s === 'issued' || s === 'ticketed';
+  const rows = useMemo(
+    () => (issuedOnly ? allRows.filter((r) => isIssued(r.ticket_status)) : allRows),
+    [allRows, issuedOnly]
+  );
+  const tripRows = useMemo(
+    () => (issuedOnly ? allTripRows.filter((r) => isIssued(r.ticket_status)) : allTripRows),
+    [allTripRows, issuedOnly]
+  );
   const [loading, setLoading] = useState(true);
   const [appliedMode, setAppliedMode] = useState<TimeMode>('day');
   const [appliedRange, setAppliedRange] = useState<{ start: Date; end: Date }>(() => {
@@ -139,6 +149,7 @@ export default function Dashboard() {
     setAirlines([]);
     setTrips([]);
     setUnit('PNR');
+    setIssuedOnly(false);
   };
 
   const val = (r: StatRow) => (unit === 'PNR' ? r.pnr_count : r.pax_sum);
@@ -362,6 +373,15 @@ export default function Dashboard() {
                 {m === 'day' ? 'Theo ngày' : m === 'month' ? 'Theo tháng' : 'Khoảng ngày'}
               </button>
             ))}
+            <label className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border cursor-pointer select-none hover:bg-accent">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-emerald-600"
+                checked={issuedOnly}
+                onChange={(e) => setIssuedOnly(e.target.checked)}
+              />
+              Đã xuất vé
+            </label>
             <div className="ml-auto inline-flex rounded-md border overflow-hidden">
               {(['PNR', 'PAX'] as Unit[]).map((u) => (
                 <button
