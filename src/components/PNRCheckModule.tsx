@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Loader2, User, Send } from "lucide-react";
+import { Loader2, User, Send, Download } from "lucide-react";
 
 interface PNRData {
   count: number;
@@ -13,6 +13,7 @@ interface PNRData {
 
 interface PNRCheckModuleProps {
   pnrInput: string;
+  type?: number;
 }
 
 const callTicketForPNR = async (pnr: string) => {
@@ -30,10 +31,11 @@ const callTicketForPNR = async (pnr: string) => {
   }
 };
 
-export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
+export const PNRCheckModule = ({ pnrInput, type = 0 }: PNRCheckModuleProps) => {
   const [results, setResults] = useState<Record<string, PNRData>>({});
   const [isChecking, setIsChecking] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
   const [rowLoading, setRowLoading] = useState<Record<string, boolean>>({});
 
@@ -132,6 +134,82 @@ export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
     }
   };
 
+  const allAvailable =
+    hasChecked &&
+    Object.keys(results).length > 0 &&
+    Object.values(results).every((d) => d.count > 0);
+
+  const handleDownload = async () => {
+    const pnrs = Object.keys(results);
+    if (pnrs.length === 0) return;
+
+    setIsDownloading(true);
+    try {
+      const body = new URLSearchParams({
+        pnr_list: pnrs.join(","),
+        option: "",
+        type: String(type),
+      });
+
+      const res = await fetch("https://apilive.hanvietair.com/process-pdf-pnr-v2/", {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: body.toString(),
+      });
+
+      if (!res.ok) throw new Error("Download failed");
+
+      const blob = await res.blob();
+
+      // Lấy tên file từ Content-Disposition nếu có
+      const disposition = res.headers.get("content-disposition");
+      let fileName = "tickets.zip";
+      if (disposition) {
+        const match = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';\n]+)/i);
+        if (match) fileName = decodeURIComponent(match[1].trim());
+      }
+
+      // Dùng File System Access API để chọn nơi lưu
+      if ("showSaveFilePicker" in window) {
+        try {
+          const fileHandle = await (window as any).showSaveFilePicker({
+            suggestedName: fileName,
+            types: [
+              {
+                description: "ZIP file",
+                accept: { "application/zip": [".zip"] },
+              },
+            ],
+          });
+          const writable = await fileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          toast.success("Tải xuống thành công!");
+        } catch (err: any) {
+          if (err.name !== "AbortError") throw err;
+          // User huỷ chọn thư mục — không báo lỗi
+        }
+      } else {
+        // Fallback cho trình duyệt không hỗ trợ File System Access API
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("Tải xuống thành công!");
+      }
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Lỗi khi tải file ZIP");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (!hasChecked) {
     return (
       <Button
@@ -190,6 +268,26 @@ export const PNRCheckModule = ({ pnrInput }: PNRCheckModuleProps) => {
             </>
           ) : (
             "Gọi mặt vé gốc"
+          )}
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleDownload}
+          disabled={!allAvailable || isDownloading}
+          className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40"
+        >
+          {isDownloading ? (
+            <>
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              Đang tải...
+            </>
+          ) : (
+            <>
+              <Download className="w-3 h-3 mr-1" />
+              Download
+            </>
           )}
         </Button>
       </div>
