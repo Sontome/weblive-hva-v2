@@ -172,36 +172,15 @@ export const PNRCheckModule = ({ pnrInput, type = 0 }: PNRCheckModuleProps) => {
         if (match) fileName = decodeURIComponent(match[1].trim());
       }
 
-      // Dùng File System Access API để chọn nơi lưu
-      if ("showSaveFilePicker" in window) {
-        try {
-          const fileHandle = await (window as any).showSaveFilePicker({
-            suggestedName: fileName,
-            types: [
-              {
-                description: "ZIP file",
-                accept: { "application/zip": [".zip"] },
-              },
-            ],
-          });
-          const writable = await fileHandle.createWritable();
-          await writable.write(blob);
-          await writable.close();
-          toast.success("Tải xuống thành công!");
-        } catch (err: any) {
-          if (err.name !== "AbortError") throw err;
-          // User huỷ chọn thư mục — không báo lỗi
-        }
-      } else {
-        // Fallback cho trình duyệt không hỗ trợ File System Access API
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success("Tải xuống thành công!");
-      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Tải xuống thành công!");
     } catch (err) {
       console.error("Download error:", err);
       toast.error("Lỗi khi tải file ZIP");
