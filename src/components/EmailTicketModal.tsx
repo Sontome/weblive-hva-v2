@@ -18,12 +18,14 @@ interface EmailTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-const TYPE_LABEL = {
+
+const TYPE_LABEL: Record<number, string> = {
   3: "Cơ bản",
   1: "IT FARE",
   2: "FULL",
   0: "Ghi chú",
-}
+};
+
 export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => {
   const [formData, setFormData] = useState({
     email: "",
@@ -94,6 +96,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
       checkPossibleGmail(value);
     }
   };
+
   const checkPossibleGmail = (email: string) => {
     const target = "@gmail.com";
     const lastPart = email.slice(-10).toLowerCase();
@@ -103,7 +106,6 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
       if (lastPart[i] === target[i]) matchCount++;
     }
 
-    // Nếu khớp nhiều nhưng chưa đúng hoàn toàn → nghi ngờ sai chính tả
     if (matchCount >= 7 && lastPart !== target) {
       setEmailWarning("⚠️ Có phải bạn định nhập '@gmail.com' không?");
     } else {
@@ -126,7 +128,6 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
   };
 
   const handleClose = () => {
-    // Reset form to default values
     setFormData({
       email: "",
       tenKhach: "",
@@ -136,7 +137,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
       pnrs: "",
       type: 0,
     });
-    setEmailWarning(""); // reset luôn cảnh báo
+    setEmailWarning("");
     setShowEmailConfirmation(false);
     setConfirmEmail("");
     onClose();
@@ -236,7 +237,6 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
     if (!formData.email || !formData.tenKhach || !formData.xungHo || !formData.pnrs) {
       toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
       return;
@@ -248,7 +248,6 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
       return;
     }
 
-    // Check if email has @gmail.com
     if (!formData.email.toLowerCase().endsWith("@gmail.com") && !showEmailConfirmation) {
       setShowEmailConfirmation(true);
       setConfirmEmail(formData.email);
@@ -321,7 +320,7 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
                     required
                     className="flex-1"
                   />
-                  <PNRCheckModule pnrInput={formData.pnrs} />
+                  <PNRCheckModule pnrInput={formData.pnrs} type={formData.type} />
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Nhập một hoặc nhiều mã PNR (6 ký tự mỗi mã), phân tách bằng dấu cách, - hoặc ;
@@ -377,8 +376,6 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
                 <Input id="sdt" name="sdt" value={formData.sdt} onChange={handleInputChange} placeholder="0901234567" />
               </div>
 
-              
-
               <div className="flex items-center justify-between space-x-4">
                 <div className="flex items-center space-x-2">
                   <Switch id="guiChung" checked={formData.guiChung} onCheckedChange={handleSwitchChange} />
@@ -396,20 +393,15 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
                     <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, type: 0 }))}>
                       Ghi chú
                     </DropdownMenuItem>
-                    
                     <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, type: 3 }))}>
                       Cơ bản
                     </DropdownMenuItem>
-                    
                     <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, type: 1 }))}>
                       IT FARE
                     </DropdownMenuItem>
-                
                     <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, type: 2 }))}>
                       FULL
                     </DropdownMenuItem>
-                
-                    
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
