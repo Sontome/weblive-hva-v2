@@ -158,9 +158,15 @@ export const RepriceModal: React.FC<RepriceModalProps> = ({
         
         if (isSuccess && data.pricegoc) {
           const prices = parsePriceText(data.pricegoc);
-          
+        
           // Auto-detect customer type from pricegoc
-          const detectedType = data.pricegoc.includes('RSTU') ? 'STU' : 'VFR';
+          let detectedType = '';
+        
+          if (data.pricegoc.includes('1PC')) {
+            detectedType = 'ADT';
+          } else if (data.pricegoc.includes('2PC')) {
+            detectedType = data.pricegoc.includes('RSTU') ? 'STU' : 'VFR';
+          }
           
           results.push({
             pnr,
