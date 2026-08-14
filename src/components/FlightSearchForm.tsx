@@ -8,7 +8,7 @@ import {
   RotateCw,
   Settings,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, addMonths, startOfMonth, isSameMonth } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -435,6 +435,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
   const [returnDate, setReturnDate] = useState<Date | undefined>();
   const [departureOpen, setDepartureOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
+  const [departureMonth, setDepartureMonth] = useState<Date>(() => startOfMonth(new Date()));
 
   const [customerType, setCustomerType] = useState<"page" | "live">("page");
   const [isCustomMode, setIsCustomMode] = useState(false);
@@ -1266,7 +1267,13 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                     <RotateCw className="w-3 h-3" />
                   </button>
                 </div>
-                <Popover open={departureOpen} onOpenChange={setDepartureOpen}>
+                <Popover
+                  open={departureOpen}
+                  onOpenChange={(open) => {
+                    if (open) setDepartureMonth(startOfMonth(departureDate || new Date()));
+                    setDepartureOpen(open);
+                  }}
+                >
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -1280,12 +1287,31 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
+                    <div className="flex items-center gap-1 overflow-x-auto border-b px-2 py-2">
+                      {Array.from({ length: 7 }, (_, i) => addMonths(departureMonth, i - 3)).map((m) => (
+                        <button
+                          key={m.toISOString()}
+                          type="button"
+                          onClick={() => setDepartureMonth(startOfMonth(m))}
+                          title={format(m, "MM/yyyy")}
+                          className={cn(
+                            "shrink-0 rounded-md border px-2 py-1 text-xs font-medium transition-colors",
+                            isSameMonth(m, departureMonth)
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-foreground hover:bg-accent hover:text-accent-foreground",
+                          )}
+                        >
+                          {format(m, "MM")}
+                        </button>
+                      ))}
+                    </div>
                     <Calendar
                       mode="single"
                       selected={departureDate}
                       onSelect={handleDepartureDateChange}
                       disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                      defaultMonth={departureDate}
+                      month={departureMonth}
+                      onMonthChange={setDepartureMonth}
                       initialFocus
                       locale={vi}
                       className="p-3 pointer-events-auto"
