@@ -1270,7 +1270,12 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                 <Popover
                   open={departureOpen}
                   onOpenChange={(open) => {
-                    if (open) setDepartureMonth(startOfMonth(departureDate || new Date()));
+                    if (open) {
+                      const minMonth = startOfMonth(new Date());
+                      const maxMonth = addMonths(minMonth, 12);
+                      const s = startOfMonth(departureDate || new Date());
+                      setDepartureMonth(s < minMonth ? minMonth : s > maxMonth ? maxMonth : s);
+                    }
                     setDepartureOpen(open);
                   }}
                 >
@@ -1286,32 +1291,73 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                       {departureDate ? format(departureDate, "dd/MM/yyyy", { locale: vi }) : <span>Chọn ngày đi</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <div className="flex items-center gap-1 overflow-x-auto border-b px-2 py-2">
-                      {Array.from({ length: 7 }, (_, i) => addMonths(departureMonth, i - 3)).map((m) => (
-                        <button
-                          key={m.toISOString()}
-                          type="button"
-                          onClick={() => setDepartureMonth(startOfMonth(m))}
-                          title={format(m, "MM/yyyy")}
-                          className={cn(
-                            "shrink-0 rounded-md border px-2 py-1 text-xs font-medium transition-colors",
-                            isSameMonth(m, departureMonth)
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-background text-foreground hover:bg-accent hover:text-accent-foreground",
-                          )}
-                        >
-                          {format(m, "MM")}
-                        </button>
-                      ))}
-                    </div>
+                  <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={6} avoidCollisions={false}>
+                    {(() => {
+                      const minMonth = startOfMonth(new Date());
+                      const maxMonth = addMonths(minMonth, 12);
+                      const clamp = (m: Date) => (m < minMonth ? minMonth : m > maxMonth ? maxMonth : m);
+                      const atMin = isSameMonth(departureMonth, minMonth);
+                      const atMax = isSameMonth(departureMonth, maxMonth);
+                      return (
+                        <div className="flex items-center gap-1 overflow-x-auto border-b px-2 py-2">
+                          <button
+                            type="button"
+                            disabled={atMin}
+                            onClick={() => setDepartureMonth(clamp(addMonths(departureMonth, -7)))}
+                            className="shrink-0 rounded-md border px-2 py-1 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {"<<"}
+                          </button>
+                          {Array.from({ length: 7 }, (_, i) => addMonths(departureMonth, i)).map((m) => {
+                            const over = m > maxMonth;
+                            return (
+                              <button
+                                key={m.toISOString()}
+                                type="button"
+                                disabled={over}
+                                onClick={() => setDepartureMonth(startOfMonth(m))}
+                                title={format(m, "MM/yyyy")}
+                                className={cn(
+                                  "shrink-0 rounded-md border px-2 py-1 text-xs font-medium transition-colors",
+                                  over
+                                    ? "opacity-40 cursor-not-allowed bg-background text-muted-foreground"
+                                    : isSameMonth(m, departureMonth)
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : "bg-background text-foreground hover:bg-accent hover:text-accent-foreground",
+                                )}
+                              >
+                                {format(m, "MM")}
+                              </button>
+                            );
+                          })}
+                          <button
+                            type="button"
+                            disabled={atMax}
+                            onClick={() => setDepartureMonth(clamp(addMonths(departureMonth, 7)))}
+                            className="shrink-0 rounded-md border px-2 py-1 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {">>"}
+                          </button>
+                        </div>
+                      );
+                    })()}
                     <Calendar
                       mode="single"
                       selected={departureDate}
                       onSelect={handleDepartureDateChange}
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      disabled={(date) =>
+                        date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                        startOfMonth(date) > addMonths(startOfMonth(new Date()), 12)
+                      }
+                      fromMonth={startOfMonth(new Date())}
+                      toMonth={addMonths(startOfMonth(new Date()), 12)}
                       month={departureMonth}
-                      onMonthChange={setDepartureMonth}
+                      onMonthChange={(m) => {
+                        const minMonth = startOfMonth(new Date());
+                        const maxMonth = addMonths(minMonth, 12);
+                        const s = startOfMonth(m);
+                        setDepartureMonth(s < minMonth ? minMonth : s > maxMonth ? maxMonth : s);
+                      }}
                       initialFocus
                       locale={vi}
                       className="p-3 pointer-events-auto"
@@ -1337,7 +1383,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                         {returnDate ? format(returnDate, "dd/MM/yyyy", { locale: vi }) : <span>Chọn ngày về</span>}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={6} avoidCollisions={false}>
                       <Calendar
                         mode="single"
                         selected={returnDate}
