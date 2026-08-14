@@ -636,14 +636,14 @@ const Index = () => {
               >
                 📊 Attendance Reports
               </Button>
-              <Button
+              {/* <Button
                 onClick={() => setShowHistory(true)}
                 variant="outline"
                 size="sm"
                 className="px-2 sm:px-4 text-xs sm:text-sm"
               >
                 🕘 Lịch sử tìm kiếm
-              </Button>
+              </Button> */}
             </div>
           </div>
           <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-3">
