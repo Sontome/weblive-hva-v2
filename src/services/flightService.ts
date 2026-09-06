@@ -4,6 +4,7 @@ import { shouldSkipVietjet } from '../utils/flightValidation';
 import { searchVietJetFlights } from './vietjetService';
 import { searchVietnamAirlinesFlights } from './vietnamAirlinesService';
 import { searchSunPQFlights } from './sunpqService';
+import { searchPremiaFlights } from './premiaService';
 
 // Keep the original function names for backward compatibility
 export const searchFlights = searchVietJetFlights;
@@ -13,7 +14,8 @@ export const searchAllFlights = async (
   searchData: FlightSearchData,
   onVietJetResult?: (results: any) => void,
   onVNAResult?: (results: any) => void,
-  onSunPQResult?: (results: any) => void
+  onSunPQResult?: (results: any) => void,
+  onPremiaResult?: (results: any) => void
 ) => {
   console.log('Starting flight search with priority for direct flights');
   
@@ -103,10 +105,26 @@ export const searchAllFlights = async (
     }
   };
 
+  // Search Premia (YP) in parallel; never break the rest
+  const searchPremia = async () => {
+    if (!onPremiaResult) return;
+    try {
+      const r = await searchPremiaFlights(searchData);
+      if (r.status_code === 200 && r.body.length > 0) {
+        onPremiaResult({ status_code: 200, body: r.body, airline: 'YP' });
+      } else {
+        onPremiaResult({ status_code: r.status_code || 404, body: [], airline: 'YP', error: r.error || 'Không có vé Premia' });
+      }
+    } catch (e: any) {
+      onPremiaResult({ status_code: 500, body: [], airline: 'YP', error: e?.message || 'Premia error' });
+    }
+  };
+
   // Search all airlines simultaneously
   await Promise.all([
     searchWithFallback(searchVietJetFlights, 'VietJet', onVietJetResult),
     searchWithFallback(searchVietnamAirlinesFlights, 'Vietnam Airlines', onVNAResult),
     searchSunPQ(),
+    searchPremia(),
   ]);
 };
