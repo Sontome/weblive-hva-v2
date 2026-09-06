@@ -96,6 +96,24 @@ interface FlightSearchData {
   sunpqThreshold5?: number;
   sunpqDiscountOW5?: number;
   sunpqDiscountRT5?: number;
+  // Premia (YP)
+  ypOneWayFee?: number;
+  ypRoundTripFee?: number;
+  ypThreshold1?: number;
+  ypDiscountOW1?: number;
+  ypDiscountRT1?: number;
+  ypThreshold2?: number;
+  ypDiscountOW2?: number;
+  ypDiscountRT2?: number;
+  ypThreshold3?: number;
+  ypDiscountOW3?: number;
+  ypDiscountRT3?: number;
+  ypThreshold4?: number;
+  ypDiscountOW4?: number;
+  ypDiscountRT4?: number;
+  ypThreshold5?: number;
+  ypDiscountOW5?: number;
+  ypDiscountRT5?: number;
 }
 
 interface FlightSearchFormProps {
@@ -343,6 +361,24 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
         sunpqThreshold5: Number((config as any).sunpq_threshold_5 || 0),
         sunpqDiscountOW5: Number((config as any).sunpq_discount_ow_5 || 0),
         sunpqDiscountRT5: Number((config as any).sunpq_discount_rt_5 || 0),
+        // Premia (YP)
+        ypOneWayFee: Number((config as any).yp_one_way_fee || 0),
+        ypRoundTripFee: Number((config as any).yp_round_trip_fee || 0),
+        ypThreshold1: Number((config as any).yp_threshold_1 || 0),
+        ypDiscountOW1: Number((config as any).yp_discount_ow_1 || 0),
+        ypDiscountRT1: Number((config as any).yp_discount_rt_1 || 0),
+        ypThreshold2: Number((config as any).yp_threshold_2 || 0),
+        ypDiscountOW2: Number((config as any).yp_discount_ow_2 || 0),
+        ypDiscountRT2: Number((config as any).yp_discount_rt_2 || 0),
+        ypThreshold3: Number((config as any).yp_threshold_3 || 0),
+        ypDiscountOW3: Number((config as any).yp_discount_ow_3 || 0),
+        ypDiscountRT3: Number((config as any).yp_discount_rt_3 || 0),
+        ypThreshold4: Number((config as any).yp_threshold_4 || 0),
+        ypDiscountOW4: Number((config as any).yp_discount_ow_4 || 0),
+        ypDiscountRT4: Number((config as any).yp_discount_rt_4 || 0),
+        ypThreshold5: Number((config as any).yp_threshold_5 || 0),
+        ypDiscountOW5: Number((config as any).yp_discount_ow_5 || 0),
+        ypDiscountRT5: Number((config as any).yp_discount_rt_5 || 0),
       };
     }
     // Fallback defaults
@@ -413,6 +449,23 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
       sunpqThreshold5: 0,
       sunpqDiscountOW5: 0,
       sunpqDiscountRT5: 0,
+      ypOneWayFee: 0,
+      ypRoundTripFee: 0,
+      ypThreshold1: 0,
+      ypDiscountOW1: 0,
+      ypDiscountRT1: 0,
+      ypThreshold2: 0,
+      ypDiscountOW2: 0,
+      ypDiscountRT2: 0,
+      ypThreshold3: 0,
+      ypDiscountOW3: 0,
+      ypDiscountRT3: 0,
+      ypThreshold4: 0,
+      ypDiscountOW4: 0,
+      ypDiscountRT4: 0,
+      ypThreshold5: 0,
+      ypDiscountOW5: 0,
+      ypDiscountRT5: 0,
     };
   };
 
@@ -564,7 +617,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
     }
   };
 
-  const adjustFee = (type: "oneWay" | "roundTripVietjet" | "roundTripVNA" | "roundTripOther" | "roundTripSunPQ", direction: "up" | "down") => {
+  const adjustFee = (type: "oneWay" | "roundTripVietjet" | "roundTripVNA" | "roundTripOther" | "roundTripSunPQ" | "roundTripYP", direction: "up" | "down") => {
     if (!isCustomMode) return; // Only allow adjustment in custom mode
 
     setFormData((prev) => {
@@ -574,6 +627,7 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
         roundTripVNA: "roundTripFeeVNA",
         roundTripOther: "roundTripFeeOther",
         roundTripSunPQ: "sunpqRoundTripFee",
+        roundTripYP: "ypRoundTripFee",
       };
       const key = keyMap[type];
       const currentValue = prev[key] as number;
@@ -922,6 +976,51 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                 </div>
               </div>
             </div>
+            {/* Premia (YP) Fees */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">Premia 1c</label>
+              <input
+                type="number"
+                value={formData.ypOneWayFee ?? 0}
+                onChange={(e) =>
+                  isCustomMode &&
+                  setFormData((prev) => ({ ...prev, ypOneWayFee: Math.max(0, parseInt(e.target.value) || 0) }))
+                }
+                className={`w-16 sm:w-20 px-1 sm:px-2 py-1 border border-gray-300 rounded-lg text-xs sm:text-sm font-bold ${
+                  !isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""
+                } ${getFeeTextColor()}`}
+                min="0"
+                disabled={!isCustomMode}
+              />
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <label className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">Premia KH</label>
+              <div className="flex items-center">
+                <input
+                  type="number"
+                  value={formData.ypRoundTripFee ?? 0}
+                  onChange={(e) =>
+                    isCustomMode &&
+                    setFormData((prev) => ({ ...prev, ypRoundTripFee: Math.max(0, parseInt(e.target.value) || 0) }))
+                  }
+                  className={`w-16 sm:w-20 px-1 sm:px-2 py-1 border border-gray-300 rounded-l-lg text-xs sm:text-sm font-bold ${
+                    !isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""
+                  } ${getFeeTextColor()}`}
+                  min="0"
+                  disabled={!isCustomMode}
+                />
+                <div className="flex flex-col">
+                  <button type="button" onClick={() => adjustFee("roundTripYP", "up")} disabled={!isCustomMode}
+                    className={`px-1 py-0.5 border border-gray-300 rounded-tr-lg ${isCustomMode ? "bg-gray-200 hover:bg-gray-300" : "bg-gray-100 cursor-not-allowed"}`}>
+                    <ChevronUp className="w-3 h-3" />
+                  </button>
+                  <button type="button" onClick={() => adjustFee("roundTripYP", "down")} disabled={!isCustomMode}
+                    className={`px-1 py-0.5 border border-gray-300 rounded-br-lg ${isCustomMode ? "bg-gray-200 hover:bg-gray-300" : "bg-gray-100 cursor-not-allowed"}`}>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Discount Configuration - Collapsible */}
@@ -1141,6 +1240,42 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
                           type="number"
                           value={(formData as any)[`sunpqDiscountRT${tier}`] ?? 0}
                           onChange={(e) => isCustomMode && setFormData((prev: any) => ({ ...prev, [`sunpqDiscountRT${tier}`]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                          className={`w-12 px-1 py-0.5 border border-gray-300 rounded text-xs ${!isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""} ${getFeeTextColor()}`}
+                          min="0"
+                          disabled={!isCustomMode}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h5 className="w-full text-xs font-medium text-purple-700 mb-2">PREMIA (YP)</h5>
+                  <div className="space-y-1">
+                    {[1, 2, 3, 4, 5].map((tier) => (
+                      <div key={tier} className="flex items-center space-x-1">
+                        <span className="text-xs text-gray-600">≥</span>
+                        <input
+                          type="number"
+                          value={(formData as any)[`ypThreshold${tier}`] ?? 0}
+                          onChange={(e) => isCustomMode && setFormData((prev: any) => ({ ...prev, [`ypThreshold${tier}`]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                          className={`w-14 px-1 py-0.5 border border-gray-300 rounded text-xs ${!isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                          min="0"
+                          disabled={!isCustomMode}
+                        />
+                        <span className="text-xs text-gray-600">trừ</span>
+                        <input
+                          type="number"
+                          value={(formData as any)[`ypDiscountOW${tier}`] ?? 0}
+                          onChange={(e) => isCustomMode && setFormData((prev: any) => ({ ...prev, [`ypDiscountOW${tier}`]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                          className={`w-12 px-1 py-0.5 border border-gray-300 rounded text-xs ${!isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""} ${getFeeTextColor()}`}
+                          min="0"
+                          disabled={!isCustomMode}
+                        />
+                        <span className="text-xs text-gray-600">/</span>
+                        <input
+                          type="number"
+                          value={(formData as any)[`ypDiscountRT${tier}`] ?? 0}
+                          onChange={(e) => isCustomMode && setFormData((prev: any) => ({ ...prev, [`ypDiscountRT${tier}`]: Math.max(0, parseInt(e.target.value) || 0) }))}
                           className={`w-12 px-1 py-0.5 border border-gray-300 rounded text-xs ${!isCustomMode ? "bg-gray-100 cursor-not-allowed" : ""} ${getFeeTextColor()}`}
                           min="0"
                           disabled={!isCustomMode}
