@@ -73,6 +73,24 @@ export interface PriceConfig {
   sunpq_threshold_5?: number;
   sunpq_discount_ow_5?: number;
   sunpq_discount_rt_5?: number;
+  // Premia YP (5 tiers)
+  yp_one_way_fee?: number;
+  yp_round_trip_fee?: number;
+  yp_threshold_1?: number;
+  yp_discount_ow_1?: number;
+  yp_discount_rt_1?: number;
+  yp_threshold_2?: number;
+  yp_discount_ow_2?: number;
+  yp_discount_rt_2?: number;
+  yp_threshold_3?: number;
+  yp_discount_ow_3?: number;
+  yp_discount_rt_3?: number;
+  yp_threshold_4?: number;
+  yp_discount_ow_4?: number;
+  yp_discount_rt_4?: number;
+  yp_threshold_5?: number;
+  yp_discount_ow_5?: number;
+  yp_discount_rt_5?: number;
 }
 
 export const usePriceConfigs = () => {
