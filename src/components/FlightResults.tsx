@@ -7,6 +7,7 @@ import { OtherAirlinesModal } from './OtherAirlinesModal';
 import { SunPQModal, calculateSunPQFinalPrice } from './SunPQModal';
 import { SunPQFlightCard } from './SunPQFlightCard';
 import type { SunPQTrip } from '@/types/sunpq';
+import { getPremiaBaggageLabel } from '@/services/premiaService';
 import { Button } from './ui/button';
 import { useRouteDiscounts } from '@/hooks/useRouteDiscounts';
 import { ChangeTicketModal } from './change-ticket/ChangeTicketModal';
@@ -109,6 +110,7 @@ interface FlightResultsProps {
   vnaResults: FlightResult[];
   sunpqResults?: SunPQTrip[];
   sunpqLowerFare?: any;
+  premiaResults?: FlightResult[];
   isLoading: boolean;
   selectedAirline: 'all' | 'VJ' | 'VNA';
   selectedFlightType: 'all' | 'direct' | 'connecting';
@@ -168,6 +170,24 @@ interface FlightResultsProps {
     otherThreshold5: number;
     otherDiscountOW5: number;
     otherDiscountRT5: number;
+    // Premia (YP)
+    ypOneWayFee?: number;
+    ypRoundTripFee?: number;
+    ypThreshold1?: number;
+    ypDiscountOW1?: number;
+    ypDiscountRT1?: number;
+    ypThreshold2?: number;
+    ypDiscountOW2?: number;
+    ypDiscountRT2?: number;
+    ypThreshold3?: number;
+    ypDiscountOW3?: number;
+    ypDiscountRT3?: number;
+    ypThreshold4?: number;
+    ypDiscountOW4?: number;
+    ypDiscountRT4?: number;
+    ypThreshold5?: number;
+    ypDiscountOW5?: number;
+    ypDiscountRT5?: number;
   } | null;
   apiStatus: { vj: string; vna: string };
   searchMessages?: string[];
@@ -226,6 +246,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   vnaResults,
   sunpqResults = [],
   sunpqLowerFare = null,
+  premiaResults = [],
   isLoading, 
   selectedAirline, 
   selectedFlightType,
@@ -244,6 +265,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   const [selectedFlight, setSelectedFlight] = useState<FlightResult | null>(null);
   const [otherAirlinesModalOpen, setOtherAirlinesModalOpen] = useState(false);
   const [sunpqModalOpen, setSunpqModalOpen] = useState(false);
+  const [premiaExpanded, setPremiaExpanded] = useState(false);
   const { getDiscount: getRouteDiscount } = useRouteDiscounts();
   const [changeTicketOpen, setChangeTicketOpen] = useState(false);
   const [changeTicketFlight, setChangeTicketFlight] = useState<FlightResult | null>(null);
@@ -335,11 +357,29 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     let isVNA = false;
     let isVJ = false;
     let isOther = false;
+    let isYP = false;
     if (flightResult && flightResult['chiều_đi']) {
       const hang = flightResult['chiều_đi'].hãng;
       isVNA = hang === 'VNA';
       isVJ = hang === 'VJ';
-      isOther = !isVNA && !isVJ;
+      isYP = hang === 'YP';
+      isOther = !isVNA && !isVJ && !isYP;
+    }
+
+    if (isYP) {
+      // Premia dùng cấu hình phí riêng
+      finalPrice += searchData.tripType === 'OW'
+        ? (searchData.ypOneWayFee || 0)
+        : (searchData.ypRoundTripFee || 0);
+      const isOW = searchData.tripType === 'OW';
+      for (const tier of [5, 4, 3, 2, 1]) {
+        const threshold = Number((searchData as any)[`ypThreshold${tier}`] || 0);
+        if (threshold > 0 && basePrice > threshold) {
+          finalPrice -= Number((searchData as any)[`ypDiscount${isOW ? 'OW' : 'RT'}${tier}`] || 0);
+          break;
+        }
+      }
+      return finalPrice;
     }
 
     if (searchData.tripType === 'OW') {
@@ -622,6 +662,8 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     
     } else if (isVJ) {
       lines.push(`Vietjet 7kg xách tay, 20kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`);
+    } else if (hang === 'YP') {
+      lines.push(`${getPremiaBaggageLabel(baggageType)}, giá vé = ${formatPriceForCopy(finalPrice)}w`);
     } else {
       const airline = airlineConfig[hang];
     
@@ -911,7 +953,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           )}
 
           {/* Booking Button - Only for VietJet flights */}
-          {!isVNA && (
+          {!isVNA && outbound.hãng !== 'YP' && (
             <div className="mt-auto pt-2 flex justify-end">
               <button
                 onClick={() => handleBooking(result)}
@@ -1075,7 +1117,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     return vnaResults.filter(result => {
       const outbound = result['chiều_đi'];
       const hang = outbound?.hãng;
-      return hang && hang !== 'VNA' && hang !== 'VJ';
+      return hang && hang !== 'VNA' && hang !== 'VJ' && hang !== 'YP';
     }).sort((a, b) => {
       const aPrice = parseInt(a['thông_tin_chung'].giá_vé);
       const bPrice = parseInt(b['thông_tin_chung'].giá_vé);
@@ -1089,6 +1131,10 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     if (otherFlights.length === 0) return null;
     return otherFlights[0]; // Already sorted by price
   };
+
+  const premiaFlights = [...premiaResults].sort(
+    (a, b) => parseInt(a['thông_tin_chung'].giá_vé) - parseInt(b['thông_tin_chung'].giá_vé),
+  );
 
   const otherAirlinesFlights = getOtherAirlinesResults();
   const cheapestOtherFlight = getCheapestOtherFlight();
@@ -1158,7 +1204,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   const vnaDirectFlights = getVNADirectFlights();
   const vnaConnectingFlights = getVNAConnectingFlights();
 
-  if (totalResults === 0 && !isLoading && (apiStatus.vj !== 'pending' || apiStatus.vna !== 'pending')) {
+  if (totalResults === 0 && premiaFlights.length === 0 && sunpqResults.length === 0 && !isLoading && (apiStatus.vj !== 'pending' || apiStatus.vna !== 'pending')) {
     return (
       <div className="bg-white rounded-2xl shadow-xl p-6">
         <div className="text-center py-8">
@@ -1183,9 +1229,9 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           Kết quả tìm kiếm ({totalResults} chuyến bay)
         </h3>
         
-        {/* OTHER + SUNPQ banner row */}
-        {(cheapestOtherFlight || sunpqResults.length > 0) && (
-          <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* OTHER + SUNPQ + PREMIA banner row */}
+        {(cheapestOtherFlight || sunpqResults.length > 0 || premiaFlights.length > 0) && (
+          <div className="mb-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {cheapestOtherFlight && (
               <div className="h-full flex flex-col">
                 <div className="flex items-center justify-between mb-2">
@@ -1237,8 +1283,43 @@ const FlightResults: React.FC<FlightResultsProps> = ({
                 </div>
               );
             })()}
+            {premiaFlights.length > 0 && (
+              <div className="h-full flex flex-col">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-purple-600 text-white px-2 py-1 rounded text-sm font-bold">PREMIA</span>
+                    <h4 className="text-base font-semibold text-purple-700">Vé Premia (YP)</h4>
+                  </div>
+                  {premiaFlights.length > 1 && (
+                    <button
+                      onClick={() => setPremiaExpanded((v) => !v)}
+                      className="text-xs font-medium text-purple-700 bg-purple-100 hover:bg-purple-200 px-2 py-1 rounded border border-purple-300"
+                    >
+                      {premiaExpanded ? 'Thu gọn' : `Xem thêm ${premiaFlights.length - 1} vé →`}
+                    </button>
+                  )}
+                </div>
+                <div className="flex-1">{renderFlightCard(premiaFlights[0], 910000, 1, true)}</div>
+              </div>
+            )}
+            {premiaExpanded && premiaFlights.length > 1 &&
+              premiaFlights.slice(1).map((f, i) => (
+                <div key={`premia-${i}`} className="h-full flex flex-col">
+                  {/* Spacer khớp chiều cao tiêu đề để viền khung thẳng hàng với vé gốc */}
+                  <div className="flex items-center justify-between mb-2 invisible" aria-hidden="true">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 rounded text-sm font-bold">PREMIA</span>
+                      <h4 className="text-base font-semibold">Vé Premia (YP)</h4>
+                    </div>
+                    <button className="text-xs font-medium px-2 py-1 rounded border">Thu gọn</button>
+                  </div>
+                  <div className="flex-1">{renderFlightCard(f, 910001 + i, i + 2, true)}</div>
+                </div>
+              ))}
+
           </div>
         )}
+
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* VietJet Column */}
