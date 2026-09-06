@@ -100,4 +100,22 @@ export interface FlightSearchData {
   sunpqThreshold5?: number;
   sunpqDiscountOW5?: number;
   sunpqDiscountRT5?: number;
+  // Premia (YP) fees, thresholds and discounts (5 tiers)
+  ypOneWayFee?: number;
+  ypRoundTripFee?: number;
+  ypThreshold1?: number;
+  ypDiscountOW1?: number;
+  ypDiscountRT1?: number;
+  ypThreshold2?: number;
+  ypDiscountOW2?: number;
+  ypDiscountRT2?: number;
+  ypThreshold3?: number;
+  ypDiscountOW3?: number;
+  ypDiscountRT3?: number;
+  ypThreshold4?: number;
+  ypDiscountOW4?: number;
+  ypDiscountRT4?: number;
+  ypThreshold5?: number;
+  ypDiscountOW5?: number;
+  ypDiscountRT5?: number;
 }
