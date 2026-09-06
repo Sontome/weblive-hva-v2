@@ -85,6 +85,23 @@ interface PriceConfig {
   sunpq_threshold_5: number;
   sunpq_discount_ow_5: number;
   sunpq_discount_rt_5: number;
+  yp_one_way_fee: number;
+  yp_round_trip_fee: number;
+  yp_threshold_1: number;
+  yp_discount_ow_1: number;
+  yp_discount_rt_1: number;
+  yp_threshold_2: number;
+  yp_discount_ow_2: number;
+  yp_discount_rt_2: number;
+  yp_threshold_3: number;
+  yp_discount_ow_3: number;
+  yp_discount_rt_3: number;
+  yp_threshold_4: number;
+  yp_discount_ow_4: number;
+  yp_discount_rt_4: number;
+  yp_threshold_5: number;
+  yp_discount_ow_5: number;
+  yp_discount_rt_5: number;
 }
 
 const Admin = () => {
@@ -230,6 +247,23 @@ const Admin = () => {
             sunpq_threshold_5: config.sunpq_threshold_5,
             sunpq_discount_ow_5: config.sunpq_discount_ow_5,
             sunpq_discount_rt_5: config.sunpq_discount_rt_5,
+            yp_one_way_fee: config.yp_one_way_fee,
+            yp_round_trip_fee: config.yp_round_trip_fee,
+            yp_threshold_1: config.yp_threshold_1,
+            yp_discount_ow_1: config.yp_discount_ow_1,
+            yp_discount_rt_1: config.yp_discount_rt_1,
+            yp_threshold_2: config.yp_threshold_2,
+            yp_discount_ow_2: config.yp_discount_ow_2,
+            yp_discount_rt_2: config.yp_discount_rt_2,
+            yp_threshold_3: config.yp_threshold_3,
+            yp_discount_ow_3: config.yp_discount_ow_3,
+            yp_discount_rt_3: config.yp_discount_rt_3,
+            yp_threshold_4: config.yp_threshold_4,
+            yp_discount_ow_4: config.yp_discount_ow_4,
+            yp_discount_rt_4: config.yp_discount_rt_4,
+            yp_threshold_5: config.yp_threshold_5,
+            yp_discount_ow_5: config.yp_discount_ow_5,
+            yp_discount_rt_5: config.yp_discount_rt_5,
           })
           .eq("id", config.id);
 
@@ -277,7 +311,7 @@ const Admin = () => {
   const renderDiscountTiers = (
     config: PriceConfig, 
     mode: string, 
-    prefix: 'vna' | 'vietjet' | 'other' | 'sunpq',
+    prefix: 'vna' | 'vietjet' | 'other' | 'sunpq' | 'yp',
     title: string,
     colorClass: string
   ) => {
@@ -294,12 +328,14 @@ const Admin = () => {
               <div key={tier} className={`grid grid-cols-4 gap-3 items-end p-3 border rounded-lg ${
                 prefix === 'vna' ? 'bg-blue-50/50' : 
                 prefix === 'vietjet' ? 'bg-red-50/50' : 
-                prefix === 'sunpq' ? 'bg-orange-50/50' : 'bg-gray-50/50'
+                prefix === 'sunpq' ? 'bg-orange-50/50' :
+                prefix === 'yp' ? 'bg-purple-50/50' : 'bg-gray-50/50'
               }`}>
                 <div className={`font-medium ${
                   prefix === 'vna' ? 'text-blue-800' : 
                   prefix === 'vietjet' ? 'text-red-800' : 
-                  prefix === 'sunpq' ? 'text-orange-800' : 'text-gray-800'
+                  prefix === 'sunpq' ? 'text-orange-800' :
+                  prefix === 'yp' ? 'text-purple-800' : 'text-gray-800'
                 }`}>Mức {tier}</div>
                 <div className="space-y-1">
                   <Label className="text-xs">Ngưỡng giá (VND)</Label>
@@ -417,6 +453,34 @@ const Admin = () => {
           </CardContent>
         </Card>
         {renderDiscountTiers(config, mode, 'sunpq', 'Giảm giá SunPQ', 'text-orange-700')}
+
+        {/* Premia (YP) phí + giảm giá */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-purple-700">Phí Premia (YP)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Phí 1 chiều Premia (VND)</Label>
+                <Input
+                  type="number"
+                  value={config.yp_one_way_fee ?? 0}
+                  onChange={(e) => handleConfigChange(mode, "yp_one_way_fee", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Khứ hồi Premia (VND)</Label>
+                <Input
+                  type="number"
+                  value={config.yp_round_trip_fee ?? 0}
+                  onChange={(e) => handleConfigChange(mode, "yp_round_trip_fee", e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        {renderDiscountTiers(config, mode, 'yp', 'Giảm giá Premia (YP)', 'text-purple-700')}
       </div>
     );
   };
