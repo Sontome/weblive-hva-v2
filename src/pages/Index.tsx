@@ -110,6 +110,7 @@ const Index = () => {
   const [vnaResults, setVnaResults] = useState([]);
   const [sunpqResults, setSunpqResults] = useState<any[]>([]);
   const [sunpqLowerFare, setSunpqLowerFare] = useState<any>(null);
+  const [premiaResults, setPremiaResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAirline, setSelectedAirline] = useState<'all' | 'VJ' | 'VNA'>('all');
   const [selectedFlightType, setSelectedFlightType] = useState<'all' | 'direct' | 'connecting'>('all');
@@ -183,6 +184,7 @@ const Index = () => {
     setVnaResults((detail.vnResult as any[]) || []);
     setVjetResults((detail.vjResult as any[]) || []);
     setSunpqResults((detail.sunResult as any[]) || []);
+    setPremiaResults((extra.premiaResults as any[]) || []);
     setSunpqLowerFare(extra.sunpqLowerFare ?? null);
     setSearchData(detail.fullSearchRequest as FlightSearchData);
     setApiStatus((extra.apiStatus as { vj: string; vna: string }) || { vj: 'success', vna: 'success' });
@@ -302,6 +304,7 @@ const Index = () => {
       vj: [] as any[],
       vna: [] as any[],
       sun: [] as any[],
+      premia: [] as any[],
       lowerFare: null as any,
       statusVJ: 'pending' as AirlineStatus,
       statusVN: 'pending' as AirlineStatus,
@@ -313,6 +316,7 @@ const Index = () => {
     setVjetResults([]);
     setVnaResults([]);
     setSunpqResults([]);
+    setPremiaResults([]);
     setSunpqLowerFare(null);
     setSearchData(searchData);
     setLastSearchData(searchData);
@@ -327,7 +331,7 @@ const Index = () => {
     fetchLowFareData(searchData);
 
     let completedAPIs = 0;
-    const totalAPIs = 3;
+    const totalAPIs = 4;
 
     const checkIfShouldStopLoading = () => {
       completedAPIs++;
@@ -348,6 +352,7 @@ const Index = () => {
             sunResult: captured.sun,
             extra: {
               sunpqLowerFare: captured.lowerFare,
+              premiaResults: captured.premia,
               apiStatus: { vj: captured.statusVJ, vna: captured.statusVN },
             },
             statusVN: captured.statusVN,
@@ -479,8 +484,20 @@ const Index = () => {
       checkIfShouldStopLoading();
     };
 
+    const onPremiaResult = (result: any) => {
+      console.log('=== PREMIA RESULT DEBUG ===', result);
+      if (result.status_code === 200 && result.body && result.body.length > 0) {
+        setPremiaResults(result.body);
+        captured.premia = result.body;
+        toast.success(`Tìm thấy ${result.body.length} chuyến bay Premia`);
+      } else {
+        setPremiaResults([]);
+      }
+      checkIfShouldStopLoading();
+    };
+
     try {
-      await searchAllFlights(searchData, onVietJetResult, onVNAResult, onSunPQResult);
+      await searchAllFlights(searchData, onVietJetResult, onVNAResult, onSunPQResult, onPremiaResult);
     } catch (error) {
       console.error('Search error:', error);
       toast.error('Có lỗi xảy ra khi tìm kiếm chuyến bay');
@@ -780,6 +797,7 @@ const Index = () => {
           vnaResults={vnaResults}
           sunpqResults={sunpqResults}
           sunpqLowerFare={sunpqLowerFare}
+          premiaResults={premiaResults}
           isLoading={isLoading}
           selectedAirline={selectedAirline}
           selectedFlightType={selectedFlightType}
