@@ -743,6 +743,10 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     const isDirect = isDirectFlight(result);
     const isConnecting = isConnectingFlight(result);
     const baggageType = result['thông_tin_chung'].hành_lý_vna;
+    const premiaStatus = String(
+      (result as any)['trạng_thái'] ?? (result as any)['thông_tin_chung']?.['trạng_thái'] ?? ''
+    ).trim().toLowerCase();
+    const premiaNote = outbound.hãng === 'YP' && premiaStatus === 'adjacent' ? 'Vé hãng Premia tham khảo' : '';
     
     // Only show copy template for direct flights - HIDE for connecting flights
     const shouldShowCopyTemplate = isDirect && !isConnecting;
@@ -769,11 +773,21 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           ${isOtherAirline ? 'border-2 border-yellow-500 shadow-yellow-200' : 'border-gray-200'}
         `}
       >
+        {premiaNote && (
+          <div className="pointer-events-none absolute top-0 right-0 z-20 h-24 w-24 overflow-hidden">
+            <div className="absolute top-[18px] right-[-42px] w-[150px] rotate-45 bg-gradient-to-r from-red-600 to-rose-500 text-white text-[9px] font-bold text-center leading-tight py-1 shadow-lg">
+              Vé Premia
+              <br />
+              tham khảo
+            </div>
+          </div>
+        )}
         {freebagLabel && (
           <div className="absolute top-1 right-1 z-10 px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] font-bold shadow-md border border-emerald-300">
             🧳 {freebagLabel}
           </div>
         )}
+
         {isVNA && (
           <div className="absolute top-1 right-1 z-10 flex items-center gap-1">
             <button
@@ -924,7 +938,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
                 <h5 className="text-xs font-medium text-gray-700">Thông tin gửi khách</h5>
                 <button
                   onClick={() => copyToClipboard(
-                    ruleNoteLine ? `${copyTemplate}\n${ruleNoteLine}` : copyTemplate
+                    [copyTemplate, ruleNoteLine, premiaNote].filter(Boolean).join('\n')
                   )}
                   className="flex items-center space-x-1 bg-blue-50 text-blue-600 px-2 py-1 rounded text-xs hover:bg-blue-100 transition-colors"
                 >
@@ -937,8 +951,15 @@ const FlightResults: React.FC<FlightResultsProps> = ({
                 {ruleNoteLine && (
                   <div className="text-red-600 font-bold text-base mt-1">{ruleNoteLine}</div>
                 )}
+                {premiaNote && (
+                  <div className="text-red-600 font-bold text-base mt-1">{premiaNote}</div>
+                )}
               </div>
             </div>
+          )}
+
+          {!shouldShowCopyTemplate && premiaNote && (
+            <div className="mt-2 text-red-600 font-bold text-sm">{premiaNote}</div>
           )}
 
           {(ruleWarningLine || (!shouldShowCopyTemplate && ruleNoteLine)) && (
