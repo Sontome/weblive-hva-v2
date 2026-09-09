@@ -39,7 +39,12 @@ export const searchPremiaFlights = async (searchData: FlightSearchData): Promise
       return { status_code: res.status, body: [], error: `HTTP ${res.status}` };
     }
     const data = await res.json();
-    const list: any[] = data?.body ?? data?.data?.body ?? [];
+    const rawList: any[] = data?.body ?? data?.data?.body ?? [];
+    const overallStatus = String(data?.['trạng_thái'] ?? data?.data?.['trạng_thái'] ?? '').trim();
+    const list = rawList.map((item) => ({
+      ...item,
+      'trạng_thái': item?.['trạng_thái'] ?? overallStatus,
+    }));
     logTag('PREMIA_SEARCH_RESPONSE', { total: list.length });
     return { status_code: list.length > 0 ? 200 : 404, body: list };
   } catch (err: any) {
