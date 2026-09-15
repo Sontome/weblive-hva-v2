@@ -119,6 +119,7 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
   const [data, setData] = useState<any | null>(null);
   const [baggageMap, setBaggageMap] = useState<Record<string, string>>({});
   const [baggageError, setBaggageError] = useState(false);
+  const [isVFR, setIsVFR] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const captureRef = useRef<HTMLDivElement>(null);
   const [capturing, setCapturing] = useState(false);
@@ -144,6 +145,7 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
     setError(null);
     setBaggageMap({});
     setBaggageError(false);
+    setIsVFR(false);
   };
 
   const handleClose = () => {
@@ -162,6 +164,7 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
     setData(null);
     setBaggageMap({});
     setBaggageError(false);
+    setIsVFR(false);
     try {
       const res = await checkSunPQPnr(code);
       if (!res?.success || !res?.data) {
@@ -183,6 +186,7 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
           }
         });
         setBaggageMap(map);
+        if ((bag?.doituong || '').toUpperCase() === 'VFR') setIsVFR(true);
       } catch {
         setBaggageError(true);
       }
@@ -254,6 +258,14 @@ export const SunPQTicketModal: React.FC<Props> = ({ isOpen, onClose, initialPNR 
                   <span className="px-2 py-1 bg-red-50 text-red-600 rounded border border-red-200">Hạn TT: {data.hanthanhtoan}</span>
                 )}
               </div>
+
+              {(data.hanhly || '').toUpperCase() === '2PC' && (
+                <p className={`text-sm font-semibold ${isVFR ? 'text-green-600' : 'text-red-600'}`}>
+                  {isVFR
+                    ? 'Vé đã áp dụng 46kg hành lý thành công'
+                    : 'Vé đủ điều kiện áp dụng 46kg hành lý, cần reprice lại nếu chưa áp dụng'}
+                </p>
+              )}
 
               <div className="flex justify-end">
                 <Button onClick={handleCapture} disabled={capturing} variant="outline" size="sm" className="gap-1">
