@@ -32,6 +32,7 @@ export interface SunBeginRepriceResponse {
   doituong?: string;
   giavegoc?: number;
   status?: string;
+  pricegoc?: string;
   kakaomess?: string;
   listhanhly?: { airport: string; fare_basis: string; passenger_type: string }[];
 }
@@ -40,8 +41,20 @@ export interface SunRepriceResponse {
   status?: string;
   reason?: string;
   response?: string;
+  pricegoc?: string;
+  pricemoi?: string;
   [k: string]: any;
 }
+
+/** Lấy tổng tiền từ text TST (GRAND TOTAL / TOTAL). */
+export const parseSunPriceText = (text?: string | null): number | null => {
+  if (!text) return null;
+  const grand = text.match(/GRAND\s+TOTAL\s+KRW\s+([\d.,]+)/i);
+  const total = grand || text.match(/\bTOTAL\s+KRW\s+([\d.,]+)/i);
+  if (!total) return null;
+  const n = Number(total[1].replace(/[.,]/g, ''));
+  return Number.isFinite(n) ? n : null;
+};
 
 export const beginSunReprice = async (pnr: string): Promise<SunBeginRepriceResponse> => {
   const res = await fetch(`${SUN_BASE}/beginReprice?pnr=${encodeURIComponent(pnr)}`, {
