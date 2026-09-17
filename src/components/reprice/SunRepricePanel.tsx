@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import {
   beginSunReprice,
   repriceSun,
+  parseSunPriceText,
   type SunBeginRepriceResponse,
 } from '@/services/sunRepriceService';
 
@@ -24,6 +25,8 @@ interface SunRepriceResult {
   pnr: string;
   ok: boolean;
   message: string;
+  oldTotal?: number | null;
+  newTotal?: number | null;
 }
 
 const parsePNRInput = (input: string): string[] => {
@@ -105,7 +108,18 @@ export const SunRepricePanel: React.FC = () => {
       try {
         const res = await repriceSun(r.pnr, customerTypes[r.pnr] || 'ADT');
         if ((res?.status || '').toUpperCase() === 'OK') {
-          results.push({ pnr: r.pnr, ok: true, message: 'Reprice thành công' });
+          const oldTotal =
+            parseSunPriceText(r.data?.pricegoc) ??
+            (r.data?.tongbillgiagoc ? Number(r.data.tongbillgiagoc) : null);
+          const newTotal =
+            parseSunPriceText(res?.pricemoi) ?? parseSunPriceText(res?.pricegoc);
+          results.push({
+            pnr: r.pnr,
+            ok: true,
+            message: 'Reprice thành công',
+            oldTotal,
+            newTotal,
+          });
         } else {
           const detail = [res?.reason, res?.response].filter(Boolean).join('\n');
           results.push({ pnr: r.pnr, ok: false, message: detail || JSON.stringify(res) });
@@ -214,12 +228,17 @@ export const SunRepricePanel: React.FC = () => {
                       </div>
                     )}
 
-                    {!!result.data.tongbillgiagoc && (
-                      <div className="flex justify-between text-xs font-bold pt-1 border-t border-green-200">
-                        <span>Tổng:</span>
-                        <span>{Number(result.data.tongbillgiagoc).toLocaleString()} KRW</span>
-                      </div>
-                    )}
+                    {(() => {
+                      const oldPrice =
+                        parseSunPriceText(result.data?.pricegoc) ??
+                        (result.data?.tongbillgiagoc ? Number(result.data.tongbillgiagoc) : null);
+                      return oldPrice != null ? (
+                        <div className="flex justify-between text-xs font-bold pt-1 border-t border-green-200">
+                          <span>Giá cũ:</span>
+                          <span>{oldPrice.toLocaleString()} KRW</span>
+                        </div>
+                      ) : null;
+                    })()}
 
                     <div>
                       <Label className="text-xs">Đối Tượng</Label>
@@ -286,6 +305,83 @@ export const SunRepricePanel: React.FC = () => {
                     {r.ok ? 'Thành công' : 'Thất bại'}
                   </span>
                 </div>
+                {(() => {
+                  const check = checkResults.find((c) => c.pnr === r.pnr && c.status === 'success');
+                  const data = check?.data;
+                  return data ? (
+                    <div className="space-y-2 mb-2">
+                      <div className="space-y-1">
+                        {(data.chang || []).map((seg) => (
+                          <div key={seg.sochang} className="flex items-center gap-2 text-xs">
+                            <Plane className="h-3 w-3 text-muted-foreground" />
+                            <span className="font-medium">
+                              {seg.departure}-{seg.arrival}
+                            </span>
+                            <span>{seg.giocatcanh}</span>
+                            <span className="text-muted-foreground">{seg.ngaycatcanh}</span>
+                            <span className="text-muted-foreground">{seg.sohieumaybay}</span>
+                            {seg.loaive && (
+                              <span className="ml-auto px-1.5 py-0.5 rounded bg-muted text-[10px] font-semibold">
+                                {seg.loaive}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {(data.passengers || []).length > 0 && (
+                        <div className="space-y-0.5 pt-1 border-t border-green-200">
+                          {(data.passengers || []).map((p, pi) => (
+                            <div key={pi} className="flex justify-between text-xs">
+                              <span>
+                                {pi + 1}. {[p.lastName, p.firstName].filter(Boolean).join('/')}
+                              </span>
+                              <span className="text-muted-foreground">{p.loaikhach}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex justify-between text-xs pt-1 border-t border-green-200">
+                        <span className="text-muted-foreground">Đối tượng:</span>
+                        <span className="font-semibold">{customerTypes[r.pnr] || 'ADT'}</span>
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+                {r.ok && (r.oldTotal != null || r.newTotal != null) && (
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <div className="text-xs">
+                      <span className="text-muted-foreground">Giá cũ: </span>
+                      <span className="font-semibold">
+                        {r.oldTotal != null ? `${r.oldTotal.toLocaleString()} KRW` : '—'}
+                      </span>
+                    </div>
+                    <div className="text-xs">
+                      <span className="text-muted-foreground">Giá mới: </span>
+                      <span className="font-semibold">
+                        {r.newTotal != null ? `${r.newTotal.toLocaleString()} KRW` : '—'}
+                      </span>
+                    </div>
+                    {r.oldTotal != null && r.newTotal != null && (
+                      <div
+                        className={`text-xs font-bold px-2 py-1 rounded ${
+                          r.newTotal < r.oldTotal
+                            ? 'bg-green-100 text-green-700'
+                            : r.newTotal > r.oldTotal
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {r.newTotal < r.oldTotal
+                          ? `↓ ${(r.oldTotal - r.newTotal).toLocaleString()}`
+                          : r.newTotal > r.oldTotal
+                          ? `↑ ${(r.newTotal - r.oldTotal).toLocaleString()}`
+                          : '= Không đổi'}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <pre
                   className={`text-xs whitespace-pre-wrap font-sans ${
                     r.ok ? 'text-green-700' : 'text-red-600'
