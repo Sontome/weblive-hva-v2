@@ -16,6 +16,8 @@ import { VNATicketModal } from '../components/VNATicketModal';
 import { OtherTicketModal } from '../components/OtherTicketModal';
 import { SunPQTicketModal } from '../components/SunPQTicketModal';
 import { AddPNRModal } from '../components/AddPNRModal';
+import { UpdatePnrModal } from '../components/update-pnr/UpdatePnrModal';
+import { FileEdit } from 'lucide-react';
 import { CurrentOnlineStatus } from '../components/attendance/CurrentOnlineStatus';
 import { EmployeeIdentityBadge } from '../components/attendance/EmployeeIdentityBadge';
 import { Button } from '@/components/ui/button';
@@ -127,6 +129,7 @@ const Index = () => {
   const [showPNRModal, setShowPNRModal] = useState(false);
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [showRepriceModal, setShowRepriceModal] = useState(false);
+  const [showUpdatePnrModal, setShowUpdatePnrModal] = useState(false);
   const [showVJTicketModal, setShowVJTicketModal] = useState(false);
   const [vjTicketInitialPNR, setVjTicketInitialPNR] = useState<string | undefined>(undefined);
   const [showVNATicketModal, setShowVNATicketModal] = useState(false);
@@ -581,6 +584,10 @@ const Index = () => {
         isOpen={showRepriceModal}
         onClose={() => setShowRepriceModal(false)}
       />
+      <UpdatePnrModal
+        isOpen={showUpdatePnrModal}
+        onClose={() => setShowUpdatePnrModal(false)}
+      />
       <VJTicketModal
         isOpen={showVJTicketModal}
         onClose={() => {
@@ -719,6 +726,15 @@ const Index = () => {
               className="px-2 sm:px-5 text-xs sm:text-sm"
             >
               💰 Reprice
+            </Button>
+            <Button
+              onClick={() => setShowUpdatePnrModal(true)}
+              variant="outline"
+              size="sm"
+              className="px-2 sm:px-5 text-xs sm:text-sm"
+            >
+              <FileEdit className="h-4 w-4 mr-1" />
+              Cập nhật PNR
             </Button>
             <Button
               onClick={() => setShowCheckinModal(true)}
