@@ -77,3 +77,38 @@ export const checkSunPQPnr = async (pnr: string) => {
   if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
   return data;
 };
+
+export interface SunPQDocumentPayload {
+  type: string;
+  nationality: string;
+  country: string;
+  number: string;
+  expiry_date: string;
+  gender: string;
+  date_of_birth: string;
+  first_name: string;
+  last_name: string;
+}
+
+export interface SunPQDocumentPassenger {
+  pax_id: number;
+  type: string;
+  document: SunPQDocumentPayload;
+}
+
+export const addSunPQDocument = async (
+  traceId: string,
+  listPassenger: SunPQDocumentPassenger[]
+) => {
+  const payload = { trace_id: traceId, list_passenger: listPassenger };
+  logTag('SUNPQ_ADD_DOCUMENT_REQUEST', payload);
+  const res = await fetch(`${SUNPQ_BASE}/add-document`, {
+    method: 'POST',
+    headers: { accept: '*/*', 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  logTag('SUNPQ_ADD_DOCUMENT_RESPONSE', data);
+  if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+  return data as { success: boolean; message?: string };
+};
