@@ -112,9 +112,9 @@ export const SunUpdatePnrPanel: React.FC = () => {
         const doc = p.document || {};
         const built: DocForm = {
           type: 'P',
-          country: doc.country || '',
-          number: (doc.number || '').toUpperCase(),
-          nationality: doc.nationality || '',
+          country: doc.country || 'VN',
+          number: (doc.number || 'C123456').toUpperCase(),
+          nationality: doc.nationality || 'VN',
           date_of_birth: toISO(doc.date_of_birth || ''),
           expiry_date: toISO(doc.expiry_date || ''),
           first_name: doc.first_name || p.first_name || '',
