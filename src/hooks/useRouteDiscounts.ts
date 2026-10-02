@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useCallback, useMemo } from 'react';
+import { useConfigTable } from '@/lib/configStore';
 
 export interface RouteDiscount {
   id: string;
@@ -12,35 +12,10 @@ export interface RouteDiscount {
   updated_at: string;
 }
 
-/**
- * Hook tải danh sách giảm giá theo chặng bay.
- * Cache toàn bộ list trong state, expose hàm `getDiscount(airline, from, to)`
- * để FlightResults tra cứu nhanh khi tính giá.
- */
+/** Route discounts from the shared cached store (6h TTL, deduped). */
 export const useRouteDiscounts = () => {
-  const [discounts, setDiscounts] = useState<RouteDiscount[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchDiscounts = useCallback(async () => {
-    setIsLoading(true);
-    const { data, error } = await (supabase as any)
-      .from('route_discounts')
-      .select('*')
-      .order('airline_code', { ascending: true })
-      .order('origin_code', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching route discounts:', error);
-      setDiscounts([]);
-    } else {
-      setDiscounts((data || []) as RouteDiscount[]);
-    }
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchDiscounts();
-  }, [fetchDiscounts]);
+  const { data, isLoading, refetch } = useConfigTable<RouteDiscount>('route_discounts');
+  const discounts = useMemo(() => data ?? [], [data]);
 
   /** Trả về số tiền giảm cho 1 chặng (0 nếu không có / inactive) */
   const getDiscount = useCallback(
@@ -61,5 +36,5 @@ export const useRouteDiscounts = () => {
     [discounts]
   );
 
-  return { discounts, isLoading, refetch: fetchDiscounts, getDiscount };
+  return { discounts, isLoading, refetch, getDiscount };
 };
