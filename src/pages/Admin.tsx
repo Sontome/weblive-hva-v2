@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RouteDiscountManager from "@/components/admin/RouteDiscountManager";
 import ResourceAdmin from "@/components/admin/ResourceAdmin";
 import TicketRulesAdmin from "@/pages/TicketRulesAdmin";
+import { loadTable, refreshTable } from "@/lib/configStore";
 
 interface PriceConfig {
   id: string;
@@ -144,12 +145,7 @@ const Admin = () => {
 
       setIsAdmin(true);
 
-      const { data: configData, error } = await supabase
-        .from("price_configs")
-        .select("*")
-        .order("customer_mode");
-
-      if (error) throw error;
+      const configData = await loadTable<any>("price_configs");
       setConfigs(configData || []);
     } catch (error: any) {
       toast({
@@ -270,6 +266,7 @@ const Admin = () => {
         if (error) throw error;
       }
 
+      await refreshTable("price_configs");
       toast({ title: "Lưu thành công!" });
     } catch (error: any) {
       toast({
