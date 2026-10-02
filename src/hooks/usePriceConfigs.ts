@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useMemo } from 'react';
+import { useConfigTable } from '@/lib/configStore';
 
 export interface PriceConfig {
   customer_mode: string;
@@ -94,35 +94,15 @@ export interface PriceConfig {
 }
 
 export const usePriceConfigs = () => {
-  const [configs, setConfigs] = useState<Record<string, PriceConfig>>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading } = useConfigTable<PriceConfig & { id?: string }>('price_configs');
 
-  useEffect(() => {
-    const fetchConfigs = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('price_configs')
-          .select('*');
-
-        if (error) {
-          console.error('Error fetching price configs:', error);
-          return;
-        }
-
-        const configMap: Record<string, PriceConfig> = {};
-        data?.forEach((config) => {
-          configMap[config.customer_mode] = config;
-        });
-        setConfigs(configMap);
-      } catch (error) {
-        console.error('Error fetching price configs:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchConfigs();
-  }, []);
+  const configs = useMemo(() => {
+    const configMap: Record<string, PriceConfig> = {};
+    data?.forEach((config) => {
+      configMap[config.customer_mode] = config;
+    });
+    return configMap;
+  }, [data]);
 
   return { configs, isLoading };
 };
