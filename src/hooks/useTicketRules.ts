@@ -1,23 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
 import type { TicketCampaign, TicketRule } from "@/types/ticketRules";
 import type { RuleEngineDataset } from "@/services/ticketRuleEngine";
+import { useConfigTable } from "@/lib/configStore";
 
+/** Shared, cached dataset (6h TTL, deduped) — no direct Supabase calls here. */
 export function useTicketRulesDataset() {
-  return useQuery<RuleEngineDataset>({
-    queryKey: ["ticket-rules-dataset"],
-    staleTime: 60_000,
-    queryFn: async () => {
-      const [campaignsRes, rulesRes] = await Promise.all([
-        supabase.from("ticket_campaigns").select("*").order("created_at", { ascending: false }),
-        supabase.from("ticket_rules").select("*").order("priority", { ascending: false }),
-      ]);
-      if (campaignsRes.error) throw campaignsRes.error;
-      if (rulesRes.error) throw rulesRes.error;
-      return {
-        campaigns: (campaignsRes.data ?? []) as TicketCampaign[],
-        rules: (rulesRes.data ?? []) as TicketRule[],
-      };
-    },
-  });
+  const c = useConfigTable<TicketCampaign>("ticket_campaigns");
+  const r = useConfigTable<TicketRule>("ticket_rules");
+  const data = useMemo<RuleEngineDataset | undefined>(
+    () => (c.data && r.data ? { campaigns: c.data, rules: r.data } : undefined),
+    [c.data, r.data],
+  );
+  return { data, isLoading: c.isLoading || r.isLoading, error: c.error || r.error };
 }
