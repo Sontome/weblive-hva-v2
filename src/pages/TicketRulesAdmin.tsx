@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { loadTable } from "@/lib/configStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,21 +69,22 @@ export default function TicketRulesAdmin({ embedded = false }: { embedded?: bool
   const [filterEnabled, setFilterEnabled] = useState<"all" | "on" | "off">("all");
   const [page, setPage] = useState(1);
 
-  const load = async () => {
+  // Reads go through the shared cached store; after edits we force-refresh it.
+  const load = async (force = true) => {
     setLoading(true);
-    const [c, r] = await Promise.all([
-      supabase.from("ticket_campaigns").select("*").order("created_at", { ascending: false }),
-      supabase.from("ticket_rules").select("*").order("priority", { ascending: false }),
+    const [c, r] = await Promise.allSettled([
+      loadTable<TicketCampaign>("ticket_campaigns", force),
+      loadTable<TicketRule>("ticket_rules", force),
     ]);
-    if (c.error) toast.error(c.error.message);
-    if (r.error) toast.error(r.error.message);
-    setCampaigns((c.data ?? []) as TicketCampaign[]);
-    setRules((r.data ?? []) as TicketRule[]);
+    if (c.status === "rejected") toast.error((c.reason as any)?.message ?? "Lỗi tải campaigns");
+    if (r.status === "rejected") toast.error((r.reason as any)?.message ?? "Lỗi tải rules");
+    setCampaigns(c.status === "fulfilled" ? c.value : []);
+    setRules(r.status === "fulfilled" ? r.value : []);
     setLoading(false);
   };
 
   useEffect(() => {
-    load();
+    load(false);
   }, []);
 
   useEffect(() => {
