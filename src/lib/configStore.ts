@@ -1,11 +1,11 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-/** Shared data layer for ticket_campaigns, ticket_rules, route_discounts.
+/** Shared data layer for ticket_campaigns, ticket_rules, route_discounts, price_configs.
  *  localStorage cache with per-table TTL, in-flight dedupe, no realtime/polling. */
 export const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
-type TableName = 'ticket_campaigns' | 'ticket_rules' | 'route_discounts';
+type TableName = 'ticket_campaigns' | 'ticket_rules' | 'route_discounts' | 'price_configs';
 
 interface Entry<T> {
   data: T[] | null;
@@ -27,6 +27,8 @@ const QUERIES: Record<TableName, () => PromiseLike<{ data: any; error: any }>> =
       .select('*')
       .order('airline_code', { ascending: true })
       .order('origin_code', { ascending: true }),
+  price_configs: () =>
+    (supabase as any).from('price_configs').select('*').order('customer_mode', { ascending: true }),
 };
 
 const entries = new Map<TableName, Entry<any>>();
@@ -117,12 +119,13 @@ export function loadTable<T>(t: TableName, force = false): Promise<T[]> {
 /** Force refresh (manual action, e.g. after admin edits). */
 export const refreshTable = <T,>(t: TableName) => loadTable<T>(t, true);
 
-/** Preload all 3 tables in parallel at app start. */
+/** Preload all config tables in parallel at app start. */
 export function preloadConfigTables() {
   return Promise.allSettled([
     loadTable('ticket_campaigns'),
     loadTable('ticket_rules'),
     loadTable('route_discounts'),
+    loadTable('price_configs'),
   ]);
 }
 
