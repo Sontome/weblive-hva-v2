@@ -123,7 +123,15 @@ export const searchAllFlights = async (
   // Search all airlines simultaneously
   await Promise.all([
     searchWithFallback(searchVietJetFlights, 'VietJet', onVietJetResult),
-    searchWithFallback(searchVietnamAirlinesFlights, 'Vietnam Airlines', onVNAResult),
+    searchWithFallback(
+      (data, direct) =>
+        searchVietnamAirlinesFlights(data, direct, (v4Res) => {
+          // Show VNA (v4) results immediately, before v3 (other airlines) finishes
+          onVNAResult && onVNAResult({ ...v4Res, airline: 'VNA', flightType: 'direct' });
+        }),
+      'Vietnam Airlines',
+      onVNAResult,
+    ),
     searchSunPQ(),
     searchPremia(),
   ]);
