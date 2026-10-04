@@ -41,6 +41,8 @@ interface VNABookingModalProps {
     tripType: 'OW' | 'RT';
   };
   maxSeats: number;
+  /** Loại vé VFR/ADT/STU chọn lúc tìm kiếm — form giữ vé mặc định theo giá trị này và khóa lại */
+  doiTuong?: 'VFR' | 'ADT' | 'STU';
   onBookingSuccess?: (pnr: string) => void;
 }
 
@@ -49,6 +51,7 @@ export const VNABookingModal = ({
   onClose,
   flightInfo,
   maxSeats,
+  doiTuong: doiTuongProp,
   onBookingSuccess
 }: VNABookingModalProps) => {
   const [passengers, setPassengers] = useState<PassengerInfo[]>([
@@ -59,7 +62,8 @@ export const VNABookingModal = ({
       type: 'người_lớn'
     }
   ]);
-  const [doiTuong, setDoiTuong] = useState<'VFR' | 'ADT' | 'STU'>('VFR');
+  // Đối tượng (VFR/ADT/STU) do lần tìm kiếm quyết định qua prop doiTuong — không cho chỉnh trong form.
+  const [doiTuong] = useState<'VFR' | 'ADT' | 'STU'>(doiTuongProp ?? 'VFR');
   const [phoneKakao, setPhoneKakao] = useState('');
   const [emailKakao, setEmailKakao] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -373,19 +377,6 @@ export const VNABookingModal = ({
           </DialogHeader>
 
           <div className="space-y-6">
-            <div>
-              <Label>Đối tượng</Label>
-              <Select value={doiTuong} onValueChange={(v: 'VFR' | 'ADT' | 'STU') => setDoiTuong(v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="VFR">VFR</SelectItem>
-                  <SelectItem value="ADT">ADT</SelectItem>
-                  <SelectItem value="STU">STU</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Phone/Kakao (không bắt buộc)</Label>
