@@ -1,6 +1,67 @@
 import { VNAFlightSearchRequest, FlightSearchData } from '../types/flight';
 
+const KOREAN_AIRPORTS = ['ICN', 'GMP', 'PUS', 'CJU', 'TAE'];
+
+/** VNA fares from check-ve-v4 (same response shape as v3). */
+const fetchVNAv4 = async (searchData: FlightSearchData): Promise<any[]> => {
+  const fromKorea = KOREAN_AIRPORTS.includes((searchData.departure || '').toUpperCase());
+  const body: Record<string, unknown> = {
+    trip_type: searchData.tripType,
+    origin: searchData.departure,
+    destination: searchData.arrival,
+    depart_date: searchData.departureDate,
+    adult: searchData.adults,
+    child: searchData.children,
+    infant: searchData.infants,
+    cabin_class: 'Y',
+    ptc_code: fromKorea ? (searchData.ptcCode || 'VFR') : 'ADT',
+  };
+  if (searchData.tripType === 'RT' && searchData.returnDate) body.return_date = searchData.returnDate;
+  try {
+    const res = await fetch('https://apilive.hanvietair.com/vna/check-ve-v4', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data?.body) ? data.body : [];
+  } catch (e) {
+    console.error('VNA v4 error:', e);
+    return [];
+  }
+};
+
+/** v3 is used only for other airlines; VNA fares come from v4. */
 export const searchVietnamAirlinesFlights = async (
+  searchData: FlightSearchData,
+  directFlightsOnly: boolean = true,
+  onVNAEarly?: (result: any) => void,
+) => {
+  // Fire VNA (v4) results as soon as they arrive, without waiting for v3
+  const v4Promise = fetchVNAv4(searchData).then((v4) => {
+    if (onVNAEarly && v4.length > 0) {
+      onVNAEarly({ status_code: 200, body: v4 });
+    }
+    return v4;
+  });
+  const [v3, v4] = await Promise.all([
+    searchVietnamAirlinesFlightsV3(searchData, directFlightsOnly).catch((e) => {
+      console.error('VNA v3 error:', e);
+      return { status_code: 500, body: [] } as any;
+    }),
+    v4Promise,
+  ]);
+  const others = (Array.isArray(v3?.body) ? v3.body : []).filter(
+    (r: any) => r?.['chiều_đi']?.['hãng'] !== 'VNA',
+  );
+  const merged = [...v4, ...others];
+  if (merged.length === 0) return { status_code: 404, body: [], error: 'No flights found' };
+  return { ...(v3 || {}), status_code: 200, body: merged };
+};
+
+
+const searchVietnamAirlinesFlightsV3 = async (
   searchData: FlightSearchData,
   directFlightsOnly: boolean = true,
   isRetry: boolean = false,
@@ -55,7 +116,7 @@ export const searchVietnamAirlinesFlights = async (
     // Nếu body null thì retry 1 lần với session_key + activedVia mới
     if (!isRetry && (data.body === "null" || data.body === null)) {
       console.log('VNA: body null, retry with session_key and activedVia 0,1,2');
-      return await searchVietnamAirlinesFlights(
+      return await searchVietnamAirlinesFlightsV3(
         searchData,
         directFlightsOnly,
         true,
