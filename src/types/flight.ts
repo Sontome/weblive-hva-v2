@@ -30,6 +30,8 @@ export interface FlightSearchData {
   adults: number;
   children: number;
   infants: number;
+  /** VNA passenger type code for check-ve-v4: VFR | SDT | STU | ADT */
+  ptcCode?: string;
   oneWayFee: number;
   roundTripFeeVietjet: number;
   roundTripFeeVNA: number;
