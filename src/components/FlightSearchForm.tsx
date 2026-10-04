@@ -571,9 +571,15 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
     };
   }, []);
 
+  const isFromKorea = ["ICN", "GMP", "PUS", "CJU", "TAE"].includes((formData.departure || "").toUpperCase());
+  const [ptcCode, setPtcCode] = useState<string>("VFR");
+  useEffect(() => {
+    setPtcCode(isFromKorea ? "VFR" : "ADT");
+  }, [isFromKorea]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(formData);
+    onSearch({ ...formData, ptcCode: isFromKorea ? ptcCode : "ADT" } as any);
   };
 
   const handleSwapAirports = () => {
@@ -1320,6 +1326,25 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
       </div>
 
       <form onSubmit={handleSubmit}>
+        <div className="mb-3 flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700">Type</label>
+          <select
+            value={isFromKorea ? ptcCode : "ADT"}
+            onChange={(e) => setPtcCode(e.target.value)}
+            disabled={!isFromKorea}
+            className="h-9 rounded-md border border-input bg-background px-2 text-sm disabled:opacity-60"
+          >
+            {isFromKorea ? (
+              <>
+<option value="VFR">VFR</option>
+                <option value="ADT">ADT</option>
+                <option value="STU">STU</option>
+              </>
+            ) : (
+              <option value="ADT">ADT</option>
+            )}
+          </select>
+        </div>
         {/* Main form layout - responsive grid */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-start">
           {/* Column 1: Trip Type and Reset Button */}
