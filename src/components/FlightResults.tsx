@@ -11,7 +11,7 @@ import { getPremiaBaggageLabel } from '@/services/premiaService';
 import { Button } from './ui/button';
 import { useRouteDiscounts } from '@/hooks/useRouteDiscounts';
 import { ChangeTicketModal } from './change-ticket/ChangeTicketModal';
-import { RefreshCw, GraduationCap } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { CheckSTUVNAModal } from './CheckSTUVNAModal';
 import { ChangeTicketVJModal } from './change-ticket-vj/ChangeTicketVJModal';
 import type { HoldTicketSegmentInput } from '@/types/heldTicket';
@@ -50,6 +50,23 @@ const buildVJHeldSegments = (flight: any): HoldTicketSegmentInput[] => {
     });
   }
   return segs;
+};
+
+const VNA_DOI_TUONGS = ['VFR', 'ADT', 'STU'] as const;
+
+// Đối tượng giữ vé VNA luôn theo type đã chọn lúc tìm kiếm (ptcCode).
+// Fallback: nhãn loại vé trên kết quả (hành_lý_vna) nếu không có ptcCode.
+const resolveVnaDoiTuong = (
+  ptcCode: string | undefined,
+  flight: FlightResult | null
+): 'VFR' | 'ADT' | 'STU' | undefined => {
+  if (ptcCode && (VNA_DOI_TUONGS as readonly string[]).includes(ptcCode)) {
+    return ptcCode as 'VFR' | 'ADT' | 'STU';
+  }
+  const label = flight?.['thông_tin_chung']?.hành_lý_vna;
+  return (VNA_DOI_TUONGS as readonly string[]).includes(label as any)
+    ? (label as 'VFR' | 'ADT' | 'STU')
+    : undefined;
 };
 
 interface FlightLeg {
@@ -188,6 +205,8 @@ interface FlightResultsProps {
     ypThreshold5?: number;
     ypDiscountOW5?: number;
     ypDiscountRT5?: number;
+    // PTC type used at search time (VFR/ADT/STU) — drives the VNA hold form
+    ptcCode?: string;
   } | null;
   apiStatus: { vj: string; vna: string };
   searchMessages?: string[];
@@ -790,17 +809,6 @@ const FlightResults: React.FC<FlightResultsProps> = ({
 
         {isVNA && (
           <div className="absolute top-1 right-1 z-10 flex items-center gap-1">
-            <button
-              onClick={() => {
-                setStuFlight(result);
-                setStuModalOpen(true);
-              }}
-              title="Check giá học sinh"
-              aria-label="Check giá học sinh"
-              className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white shadow-md border border-indigo-300 transition-colors"
-            >
-              <GraduationCap className="h-3 w-3" />
-            </button>
             <button
               onClick={() => {
                 setChangeTicketFlight(result);
@@ -1439,6 +1447,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
                 tripType: searchData?.tripType || 'OW'
               }}
               maxSeats={parseInt(selectedFlight['thông_tin_chung'].số_ghế_còn)}
+              doiTuong={resolveVnaDoiTuong(searchData?.ptcCode, selectedFlight)}
               onBookingSuccess={onVNABookingSuccess}
             />
           </>
@@ -1624,6 +1633,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
               tripType: searchData?.tripType || 'OW'
             }}
             maxSeats={parseInt(selectedFlight['thông_tin_chung'].số_ghế_còn)}
+            doiTuong={resolveVnaDoiTuong(searchData?.ptcCode, selectedFlight)}
             onBookingSuccess={onVNABookingSuccess}
           />
         </>
