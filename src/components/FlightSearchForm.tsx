@@ -7,6 +7,8 @@ import {
   RotateCcw,
   RotateCw,
   Settings,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { format, addMonths, startOfMonth, isSameMonth } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -17,6 +19,13 @@ import { cn } from "@/lib/utils";
 import { PriceConfig } from "@/hooks/usePriceConfigs";
 import { useRouteDiscounts } from "@/hooks/useRouteDiscounts";
 import { airports } from "@/data/airports";
+import {
+  MultiCityLeg,
+  MultiCitySearchData,
+  MULTI_CITY_MAX_LEGS,
+  MULTI_CITY_MIN_LEGS,
+  validateMultiCity,
+} from "@/services/vnaMultiCityService";
 
 interface FlightSearchData {
   departure: string;
@@ -120,6 +129,8 @@ interface FlightSearchData {
 
 interface FlightSearchFormProps {
   onSearch: (data: FlightSearchData, options?: { forceFresh?: boolean }) => void;
+  /** VNA-only multi-city search (trip_type MD). */
+  onMultiCitySearch?: (data: MultiCitySearchData) => void;
   isLoading: boolean;
   customerType?: "page" | "live" | "custom" | null;
   priceConfigs?: Record<string, PriceConfig>;
@@ -291,7 +302,7 @@ const AirportSelect: React.FC<{
   );
 };
 
-const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFormProps>(({ onSearch, isLoading, customerType: propCustomerType, priceConfigs, onStudentSearchAvailabilityChange }, ref) => {
+const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFormProps>(({ onSearch, onMultiCitySearch, isLoading, customerType: propCustomerType, priceConfigs, onStudentSearchAvailabilityChange }, ref) => {
   const { discounts: routeDiscounts } = useRouteDiscounts();
   // Helper function to get config values from database or fallback to defaults
   const getConfigValues = (mode: string) => {
@@ -578,7 +589,54 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
     };
   }, []);
 
-  const isFromKorea = airports.some((airport) => airport.country === "Korea" && airport.code === (formData.departure || "").toUpperCase());
+  // ===== Multi-city (VNA only) state =====
+  const [isMultiCity, setIsMultiCity] = useState(false);
+  const [legs, setLegs] = useState<MultiCityLeg[]>([
+    { origin: "ICN", destination: "HAN", date: "" },
+    { origin: "HAN", destination: "SGN", date: "" },
+    { origin: "SGN", destination: "ICN", date: "" },
+  ]);
+  const [multiCityError, setMultiCityError] = useState<string | null>(null);
+  const [openLegDate, setOpenLegDate] = useState<number | null>(null);
+  const vietnamCodes = airportOptions.map((o) => o.code).filter((c) => !koreanAirports.includes(c));
+
+  /** Re-chain legs so legs[i+1].origin === legs[i].destination. */
+  const chainLegs = (list: MultiCityLeg[]) =>
+    list.map((l, i) => (i === 0 ? l : { ...l, origin: list[i - 1].destination }));
+
+  const updateLeg = (index: number, patch: Partial<MultiCityLeg>) => {
+    setMultiCityError(null);
+    setLegs((prev) => {
+      const next = prev.map((l, i) => (i === index ? { ...l, ...patch } : l));
+      // Clear later dates that now fall before an earlier leg's date
+      if (patch.date !== undefined) {
+        for (let i = index + 1; i < next.length; i++) {
+          if (next[i].date && next[i - 1].date && next[i].date < next[i - 1].date) next[i] = { ...next[i], date: "" };
+        }
+      }
+      return chainLegs(next);
+    });
+  };
+
+  const addLeg = () => {
+    setMultiCityError(null);
+    setLegs((prev) =>
+      prev.length >= MULTI_CITY_MAX_LEGS
+        ? prev
+        : chainLegs([...prev, { origin: prev[prev.length - 1].destination, destination: "", date: "" }]),
+    );
+  };
+
+  const removeLeg = (index: number) => {
+    setMultiCityError(null);
+    setLegs((prev) => (prev.length <= MULTI_CITY_MIN_LEGS ? prev : chainLegs(prev.filter((_, i) => i !== index))));
+  };
+
+  const isFromKorea = airports.some(
+    (airport) =>
+      airport.country === "Korea" &&
+      airport.code === ((isMultiCity ? legs[0]?.origin : formData.departure) || "").toUpperCase(),
+  );
   const [ptcCode, setPtcCode] = useState<string>("VFR");
   useEffect(() => {
     setPtcCode(isFromKorea ? "VFR" : "ADT");
@@ -590,21 +648,147 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isMultiCity) {
+      const err = validateMultiCity(legs, koreanAirports, vietnamCodes);
+      setMultiCityError(err);
+      if (err || !onMultiCitySearch) return;
+      onMultiCitySearch({
+        legs,
+        adults: formData.adults,
+        children: formData.children,
+        infants: formData.infants,
+        ptcCode: isFromKorea ? ptcCode : "ADT",
+      });
+      return;
+    }
     submitSearch();
   };
 
   useEffect(() => {
     onStudentSearchAvailabilityChange?.(isFromKorea && ptcCode !== "STU");
-  }, [isFromKorea, ptcCode, onStudentSearchAvailabilityChange]);
+  }, [isMultiCity, isFromKorea, ptcCode, onStudentSearchAvailabilityChange]);
 
   useImperativeHandle(ref, () => ({
     searchStudentFares: () => {
       if (isLoading || !isFromKorea || ptcCode === "STU") return;
       setPtcCode("STU");
+      if (isMultiCity) {
+        const err = validateMultiCity(legs, koreanAirports, vietnamCodes);
+        setMultiCityError(err);
+        if (err || !onMultiCitySearch) return;
+        onMultiCitySearch({
+          legs,
+          adults: formData.adults,
+          children: formData.children,
+          infants: formData.infants,
+          ptcCode: "STU",
+        });
+        return;
+      }
       // Explicit value avoids reading the previous React state during this click.
       submitSearch("STU", true);
     },
   }));
+
+  const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+  const parseIso = (s: string) => (s ? new Date(`${s}T00:00:00`) : undefined);
+
+  const renderMultiCityEditor = () => (
+    <>
+      {legs.map((leg, i) => {
+        const prevDate = i > 0 ? parseIso(legs[i - 1].date) : undefined;
+        const minDate = prevDate && prevDate > todayStart ? prevDate : todayStart;
+        const selected = parseIso(leg.date);
+        return (
+          <div key={i} className="rounded-lg border border-border p-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-semibold">Chặng {i + 1}</span>
+              {i >= 2 && legs.length > MULTI_CITY_MIN_LEGS && (
+                <button
+                  type="button"
+                  onClick={() => removeLeg(i)}
+                  className="text-destructive hover:opacity-80 flex items-center gap-1 text-xs"
+                  title="Xóa chặng"
+                >
+                  <Trash2 className="w-3 h-3" /> Xóa
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {i === 0 ? (
+                <AirportSelect
+                  value={leg.origin}
+                  onChange={(v) => updateLeg(0, { origin: v })}
+                  label="Nơi đi"
+                  excludeCodes={vietnamCodes}
+                />
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nơi đi</label>
+                  <div className="w-full px-3 py-2 border border-input rounded-lg bg-muted text-sm">
+                    {airportOptions.find((o) => o.code === leg.origin)?.name || leg.origin || "—"}
+                  </div>
+                </div>
+              )}
+              <AirportSelect
+                value={leg.destination}
+                onChange={(v) => updateLeg(i, { destination: v })}
+                label="Nơi đến"
+                excludeCodes={[
+                  ...(leg.origin ? [leg.origin] : []),
+                  // Middle legs (and the last leg of a 2-leg trip, which must end in Vietnam)
+                  // cannot arrive at a Korean airport; only the final leg of 3-4 leg trips may.
+                  ...(i === legs.length - 1 && legs.length >= 3 ? [] : koreanAirports),
+                ]}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ngày đi</label>
+                <Popover open={openLegDate === i} onOpenChange={(o) => setOpenLegDate(o ? i : null)}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal px-2 sm:px-3 py-2 h-auto text-xs sm:text-sm",
+                        !selected && "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="mr-1 sm:mr-2 h-4 w-4" />
+                      {selected ? format(selected, "dd/MM/yyyy", { locale: vi }) : <span>Chọn ngày</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={6} avoidCollisions={false}>
+                    <Calendar
+                      mode="single"
+                      selected={selected}
+                      onSelect={(d) => {
+                        updateLeg(i, { date: d ? format(d, "yyyy-MM-dd") : "" });
+                        setOpenLegDate(null);
+                      }}
+                      disabled={(d) => d < minDate || startOfMonth(d) > addMonths(startOfMonth(new Date()), 12)}
+                      defaultMonth={selected || minDate}
+                      initialFocus
+                      locale={vi}
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      {legs.length < MULTI_CITY_MAX_LEGS && (
+        <button
+          type="button"
+          onClick={addLeg}
+          className="flex items-center gap-1 text-sm font-medium text-primary hover:opacity-80"
+        >
+          <Plus className="w-4 h-4" /> Thêm chặng
+        </button>
+      )}
+      {multiCityError && <p className="text-sm text-destructive">{multiCityError}</p>}
+    </>
+  );
 
   const handleSwapAirports = () => {
     setFormData((prev) => ({
@@ -1361,8 +1545,11 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
                   <input
                     type="radio"
                     value="OW"
-                    checked={formData.tripType === "OW"}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, tripType: e.target.value as "OW" | "RT" }))}
+                    checked={!isMultiCity && formData.tripType === "OW"}
+                    onChange={(e) => {
+                      setIsMultiCity(false);
+                      setFormData((prev) => ({ ...prev, tripType: e.target.value as "OW" | "RT" }));
+                    }}
                     className="mr-2"
                   />
                   Một chiều
@@ -1371,11 +1558,27 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
                   <input
                     type="radio"
                     value="RT"
-                    checked={formData.tripType === "RT"}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, tripType: e.target.value as "OW" | "RT" }))}
+                    checked={!isMultiCity && formData.tripType === "RT"}
+                    onChange={(e) => {
+                      setIsMultiCity(false);
+                      setFormData((prev) => ({ ...prev, tripType: e.target.value as "OW" | "RT" }));
+                    }}
                     className="mr-2"
                   />
                   Khứ hồi
+                </label>
+                <label className="flex items-center text-sm whitespace-nowrap">
+                  <input
+                    type="radio"
+                    value="MD"
+                    checked={isMultiCity}
+                    onChange={() => {
+                      setMultiCityError(null);
+                      setIsMultiCity(true);
+                    }}
+                    className="mr-2"
+                  />
+                  Nhiều chặng
                 </label>
               </div>
             </div>
@@ -1392,6 +1595,9 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
           </div>
 
           {/* Column 2: Airports and Dates */}
+          {isMultiCity ? (
+            <div className="md:col-span-7 space-y-2">{renderMultiCityEditor()}</div>
+          ) : (
           <div className="md:col-span-7 space-y-3">
             {/* Airports Row */}
             <div className="grid grid-cols-2 gap-2 sm:gap-4 relative">
@@ -1568,6 +1774,7 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
               )}
             </div>
           </div>
+          )}
 
           {/* Column 3: Passenger counts and Search button */}
           <div className="md:col-span-3 space-y-2">
