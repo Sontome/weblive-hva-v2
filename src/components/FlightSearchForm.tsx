@@ -739,9 +739,9 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
                 label="Nơi đến"
                 excludeCodes={[
                   ...(leg.origin ? [leg.origin] : []),
-                  // Chỉ các chặng giữa không được hạ cánh ở sân bay Hàn; chặng cuối
-                  // (kể cả hành trình 2 chặng) được phép về sân bay Hàn.
-                  ...(i < legs.length - 1 ? koreanAirports : []),
+                  // Các chặng giữa không được hạ cánh ở sân bay Hàn; chặng cuối của
+                  // hành trình 3-4 chặng bắt buộc về Hàn nên loại sân bay Việt Nam.
+                  ...(i < legs.length - 1 ? koreanAirports : legs.length >= 3 ? vietnamCodes : []),
                 ]}
               />
               <div>
