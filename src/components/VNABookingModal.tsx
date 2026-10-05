@@ -373,7 +373,15 @@ export const VNABookingModal = ({
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Thông Tin Hành Khách - Giữ Vé VNA</DialogTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className="inline-flex items-center gap-1 rounded-full border bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
+                title="Đối tượng hành khách theo lần tìm kiếm — không thể thay đổi"
+              >
+                Đối tượng: {doiTuong}
+              </span>
+              <DialogTitle>Thông Tin Hành Khách - Giữ Vé VNA</DialogTitle>
+            </div>
           </DialogHeader>
 
           <div className="space-y-6">
