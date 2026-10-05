@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plane, Clock, Users, Copy, ChevronDown } from 'lucide-react';
+import { Plane, Clock, Users, Copy, ChevronDown, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 import { BookingModal } from './BookingModal';
 import { VNABookingModal } from './VNABookingModal';
@@ -214,6 +214,8 @@ interface FlightResultsProps {
   vietjetDomesticError?: boolean;
   onVJBookingSuccess?: (pnr: string) => void;
   onVNABookingSuccess?: (pnr: string) => void;
+  canSearchStudentFares?: boolean;
+  onSearchStudentFares?: () => void;
 }
 
 // Airline names for display
@@ -275,7 +277,9 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   hasSearched = false,
   vietjetDomesticError = false,
   onVJBookingSuccess,
-  onVNABookingSuccess
+  onVNABookingSuccess,
+  canSearchStudentFares = false,
+  onSearchStudentFares,
 }) => {
   const [expandedDetails, setExpandedDetails] = useState<{ [key: number]: boolean }>({});
   const [expandedItinerary, setExpandedItinerary] = useState<{ [key: number]: boolean }>({});
@@ -662,22 +666,15 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     }
     
     // Airline specific baggage info
-    if (isVNA && (baggageType === 'VFR' || baggageType === 'ADT')) {
-      const isStudent = studentOverride != null;
-    
-      if (baggageType === 'ADT') {
-        lines.push(
-          isStudent
-            ? `VNairlines DHS 10kg xách tay, 23kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
-            : `VNairlines 10kg xách tay, 23kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
-        );
-      } else {
-        lines.push(
-          isStudent
-            ? `VNairlines DHS 10kg xách tay, 46kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
-            : `VNairlines 10kg xách tay, 46kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
-        );
-      }
+    if (isVNA && (baggageType === 'VFR' || baggageType === 'STU')) {
+      const isStudent = baggageType === 'STU' || studentOverride != null;
+
+      lines.push(
+        isStudent
+          ? `VNairlines DHS 10kg xách tay, 46kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
+          : `VNairlines 10kg xách tay, 46kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
+      );
+
     
     } else if (isVJ) {
       lines.push(`Vietjet 7kg xách tay, 20kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`);
@@ -809,6 +806,20 @@ const FlightResults: React.FC<FlightResultsProps> = ({
 
         {isVNA && (
           <div className="absolute top-1 right-1 z-10 flex items-center gap-1">
+            {canSearchStudentFares && onSearchStudentFares && (
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                onClick={onSearchStudentFares}
+                disabled={isLoading}
+                title="Check giá học sinh"
+                aria-label="Check giá học sinh"
+                className="h-6 w-6 rounded-full border border-input shadow-sm [&_svg]:size-3"
+              >
+                <GraduationCap />
+              </Button>
+            )}
             <button
               onClick={() => {
                 setChangeTicketFlight(result);
@@ -1118,7 +1129,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
       const bBaggageType = b['thông_tin_chung'].hành_lý_vna;
       
       const getBaggagePriority = (type: string) => {
-        if (type === 'VFR') return 1; // VFR (46kg) first
+        if (type === 'VFR' || type === 'STU') return 1; // VFR/STU (46kg) first
         if (type === 'ADT') return 2; // ADT (23kg) second
         return 3; // Others last
       };
@@ -1211,7 +1222,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
       const bBaggageType = b['thông_tin_chung'].hành_lý_vna;
       
       const getBaggagePriority = (type: string) => {
-        if (type === 'VFR') return 1;
+        if (type === 'VFR' || type === 'STU') return 1;
         if (type === 'ADT') return 2;
         return 3;
       };
