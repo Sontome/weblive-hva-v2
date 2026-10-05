@@ -31,15 +31,14 @@ export const validateMultiCity = (
     if (!l.destination) return `Chặng ${n}: thiếu nơi đến.`;
     if (!l.date) return `Chặng ${n}: thiếu ngày đi.`;
     if (l.origin === l.destination) return `Chặng ${n}: nơi đi và nơi đến không được trùng nhau.`;
-    if (i > 0 && legs[i - 1].destination !== l.origin) return `Chặng ${n} phải khởi hành từ nơi đến của chặng ${i}.`;
     if (i > 0 && legs[i - 1].date > l.date) return `Ngày chặng ${n} không được trước ngày chặng ${i}.`;
   }
   if (!koreanCodes.includes(legs[0].origin)) {
     return `Chặng 1 phải khởi hành từ Hàn Quốc (${koreanCodes.join("/")}).`;
   }
   const last = legs[legs.length - 1].destination;
-  if (legs.length === 2 && !vietnamCodes.includes(last)) {
-    return "Hành trình 2 chặng: điểm đến chặng 2 phải ở Việt Nam.";
+  if (legs.length === 2 && !vietnamCodes.includes(last) && !koreanCodes.includes(last)) {
+    return `Hành trình 2 chặng: điểm đến chặng 2 phải ở Việt Nam hoặc Hàn Quốc (${koreanCodes.join("/")}).`;
   }
   if (legs.length >= 3 && !koreanCodes.includes(last)) {
     return `Hành trình ${legs.length} chặng: điểm đến chặng cuối phải ở Hàn Quốc (${koreanCodes.join("/")}).`;
