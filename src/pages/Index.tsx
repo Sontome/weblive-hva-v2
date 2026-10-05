@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import FlightSearchForm from '../components/FlightSearchForm';
+import FlightSearchForm, { type FlightSearchFormHandle } from '../components/FlightSearchForm';
 import FlightResults from '../components/FlightResults';
 import AirlineFilter from '../components/AirlineFilter';
 import FlightTypeFilter from '../components/FlightTypeFilter';
@@ -114,6 +114,8 @@ const Index = () => {
   const [sunpqLowerFare, setSunpqLowerFare] = useState<any>(null);
   const [premiaResults, setPremiaResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const searchFormRef = useRef<FlightSearchFormHandle>(null);
+  const [canSearchStudentFares, setCanSearchStudentFares] = useState(false);
   const [selectedAirline, setSelectedAirline] = useState<'all' | 'VJ' | 'VNA'>('all');
   const [selectedFlightType, setSelectedFlightType] = useState<'all' | 'direct' | 'connecting'>('all');
   const [searchData, setSearchData] = useState<FlightSearchData | null>(null);
@@ -509,7 +511,12 @@ const Index = () => {
   };
 
   // Wrapper used by the search form: warns when a fresh snapshot already exists.
-  const handleSearchRequest = async (data: FlightSearchData) => {
+  const handleSearchRequest = async (data: FlightSearchData, options?: { forceFresh?: boolean }) => {
+    // A student search must run immediately, not reuse/warn about a VFR/ADT snapshot.
+    if (options?.forceFresh) {
+      void handleSearch(data);
+      return;
+    }
     const existing = await findValidSummaryByKey(buildSearchKey(buildKeyParts(data)));
     if (existing) {
       setCacheWarning({ summary: existing, pending: data });
@@ -774,7 +781,7 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <FlightSearchForm onSearch={handleSearchRequest} isLoading={isLoading} customerType={customerType} priceConfigs={priceConfigs} />
+        <FlightSearchForm ref={searchFormRef} onSearch={handleSearchRequest} isLoading={isLoading} customerType={customerType} priceConfigs={priceConfigs} onStudentSearchAvailabilityChange={setCanSearchStudentFares} />
 
         {cachedInfo && (
           <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
@@ -818,6 +825,8 @@ const Index = () => {
           selectedAirline={selectedAirline}
           selectedFlightType={selectedFlightType}
           searchData={searchData}
+          canSearchStudentFares={canSearchStudentFares}
+          onSearchStudentFares={() => searchFormRef.current?.searchStudentFares()}
           apiStatus={apiStatus}
           searchMessages={searchMessages}
           hasSearched={hasSearched}
