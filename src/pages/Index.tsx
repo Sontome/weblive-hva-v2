@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FlightSearchForm, { type FlightSearchFormHandle } from '../components/FlightSearchForm';
 import FlightResults from '../components/FlightResults';
@@ -39,6 +39,9 @@ import {
   saveSnapshot,
 } from '@/lib/searchCache/cache';
 import type { AirlineStatus, SnapshotSummary } from '@/lib/searchCache/types';
+import VnaMultiCityResults from '@/components/VnaMultiCityResults';
+import { searchVnaMultiCity, type MultiCitySearchData } from '@/services/vnaMultiCityService';
+import type { VnaRtPricingConfig } from '@/lib/vnaPricing';
 
 interface FlightSearchData {
   departure: string;
@@ -299,7 +302,47 @@ const Index = () => {
   };
 
 
+  // ===== VNA multi-city (MD) flow — separate from OW/RT =====
+  const [multiCityMode, setMultiCityMode] = useState(false);
+  const [multiCityResults, setMultiCityResults] = useState<any[]>([]);
+  const [multiCityError, setMultiCityError] = useState<string | null>(null);
+  const [multiCitySearched, setMultiCitySearched] = useState(false);
+  const multiCityReqRef = useRef(0);
+
+  // VNA round-trip fee/discount settings applied to multi-city prices
+  const vnaRtConfig = useMemo<VnaRtPricingConfig | undefined>(() => {
+    const c = customerType ? (priceConfigs as any)?.[customerType] : undefined;
+    if (!c) return undefined;
+    return {
+      roundTripFeeVNA: Number(c.round_trip_fee_vna),
+      vnaThreshold1: Number(c.vna_threshold_1), vnaDiscountRT1: Number(c.vna_discount_rt_1),
+      vnaThreshold2: Number(c.vna_threshold_2), vnaDiscountRT2: Number(c.vna_discount_rt_2),
+      vnaThreshold3: Number(c.vna_threshold_3), vnaDiscountRT3: Number(c.vna_discount_rt_3),
+      vnaThreshold4: Number(c.vna_threshold_4), vnaDiscountRT4: Number(c.vna_discount_rt_4),
+      vnaThreshold5: Number(c.vna_threshold_5), vnaDiscountRT5: Number(c.vna_discount_rt_5),
+    };
+  }, [priceConfigs, customerType]);
+
+  const handleMultiCitySearch = async (data: MultiCitySearchData) => {
+    const reqId = ++multiCityReqRef.current;
+    setMultiCityMode(true);
+    setMultiCitySearched(true);
+    setMultiCityResults([]);
+    setMultiCityError(null);
+    setIsLoading(true);
+    try {
+      const r = await searchVnaMultiCity(data); // VNA only, no other airlines
+      if (reqId !== multiCityReqRef.current) return;
+      setMultiCityResults(r.body);
+      setMultiCityError(r.status_code === 200 ? null : r.error || 'Không có kết quả');
+    } finally {
+      if (reqId === multiCityReqRef.current) setIsLoading(false);
+    }
+  };
+
   const handleSearch = async (searchData: FlightSearchData) => {
+    multiCityReqRef.current++;
+    setMultiCityMode(false);
     console.log('Searching with data:', searchData);
     setCachedInfo(null);
     const snapshotKeyParts = buildKeyParts(searchData);
@@ -781,7 +824,7 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <FlightSearchForm ref={searchFormRef} onSearch={handleSearchRequest} isLoading={isLoading} customerType={customerType} priceConfigs={priceConfigs} onStudentSearchAvailabilityChange={setCanSearchStudentFares} />
+        <FlightSearchForm ref={searchFormRef} onSearch={handleSearchRequest} onMultiCitySearch={handleMultiCitySearch} isLoading={isLoading} customerType={customerType} priceConfigs={priceConfigs} onStudentSearchAvailabilityChange={setCanSearchStudentFares} />
 
         {cachedInfo && (
           <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
@@ -814,6 +857,17 @@ const Index = () => {
           />
         )}
         
+        {multiCityMode ? (
+          <VnaMultiCityResults
+            results={multiCityResults}
+            isLoading={isLoading}
+            error={multiCityError}
+            hasSearched={multiCitySearched}
+            priceConfig={vnaRtConfig}
+            canSearchStudentFares={canSearchStudentFares}
+            onSearchStudentFares={() => searchFormRef.current?.searchStudentFares()}
+          />
+        ) : (
         <FlightResults
           results={searchResults} 
           vjetResults={vjetResults}
@@ -840,6 +894,7 @@ const Index = () => {
             setShowVNATicketModal(true);
           }}
         />
+        )}
       </div>
     </div>
   );
