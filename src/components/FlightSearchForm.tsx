@@ -608,23 +608,35 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
     setMultiCityError(null);
     setLegs((prev) => {
       const next = prev.map((l, i) => (i === index ? { ...l, ...patch } : l));
+      // Auto-fill the next leg's origin from this leg's destination (user can still change it)
+      if (patch.destination !== undefined && index + 1 < next.length) {
+        next[index + 1] = { ...next[index + 1], origin: patch.destination };
+      }
       // Clear later dates that now fall before an earlier leg's date
       if (patch.date !== undefined) {
         for (let i = index + 1; i < next.length; i++) {
           if (next[i].date && next[i - 1].date && next[i].date < next[i - 1].date) next[i] = { ...next[i], date: "" };
         }
       }
-      return chainLegs(next);
+      return next;
     });
   };
 
   const addLeg = () => {
     setMultiCityError(null);
-    setLegs((prev) =>
-      prev.length >= MULTI_CITY_MAX_LEGS
-        ? prev
-        : chainLegs([...prev, { origin: prev[prev.length - 1].destination, destination: "", date: "" }]),
-    );
+    setLegs((prev) => {
+      if (prev.length >= MULTI_CITY_MAX_LEGS) return prev;
+      const last = prev[prev.length - 1];
+      // If the current last leg ends in Korea, move that destination to the new
+      // final leg and clear the previous leg's destination (user picks it again).
+      if (koreanAirports.includes(last.destination)) {
+        const next = prev.map((l, i) =>
+          i === prev.length - 1 ? { ...l, destination: "" } : l,
+        );
+        return [...next, { origin: "", destination: last.destination, date: "" }];
+      }
+      return [...prev, { origin: last.destination, destination: "", date: "" }];
+    });
   };
 
   const removeLeg = (index: number) => {
@@ -715,21 +727,12 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {i === 0 ? (
-                <AirportSelect
-                  value={leg.origin}
-                  onChange={(v) => updateLeg(0, { origin: v })}
-                  label="Nơi đi"
-                  excludeCodes={vietnamCodes}
-                />
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nơi đi</label>
-                  <div className="w-full px-3 py-2 border border-input rounded-lg bg-muted text-sm">
-                    {airportOptions.find((o) => o.code === leg.origin)?.name || leg.origin || "—"}
-                  </div>
-                </div>
-              )}
+              <AirportSelect
+                value={leg.origin}
+                onChange={(v) => updateLeg(i, { origin: v })}
+                label="Nơi đi"
+                excludeCodes={i === 0 ? vietnamCodes : leg.destination ? [leg.destination] : []}
+              />
               <AirportSelect
                 value={leg.destination}
                 onChange={(v) => updateLeg(i, { destination: v })}
