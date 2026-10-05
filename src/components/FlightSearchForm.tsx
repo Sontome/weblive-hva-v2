@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useImperativeHandle } from "react";
 import {
   Calendar as CalendarIcon,
   ChevronUp,
@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { PriceConfig } from "@/hooks/usePriceConfigs";
 import { useRouteDiscounts } from "@/hooks/useRouteDiscounts";
+import { airports } from "@/data/airports";
 
 interface FlightSearchData {
   departure: string;
@@ -26,6 +27,7 @@ interface FlightSearchData {
   adults: number;
   children: number;
   infants: number;
+  ptcCode?: string;
   oneWayFee: number;
   roundTripFeeVietjet: number;
   roundTripFeeVNA: number;
@@ -117,10 +119,15 @@ interface FlightSearchData {
 }
 
 interface FlightSearchFormProps {
-  onSearch: (data: FlightSearchData) => void;
+  onSearch: (data: FlightSearchData, options?: { forceFresh?: boolean }) => void;
   isLoading: boolean;
   customerType?: "page" | "live" | "custom" | null;
   priceConfigs?: Record<string, PriceConfig>;
+  onStudentSearchAvailabilityChange?: (available: boolean) => void;
+}
+
+export interface FlightSearchFormHandle {
+  searchStudentFares: () => void;
 }
 
 // Airport codes with location names
@@ -284,7 +291,7 @@ const AirportSelect: React.FC<{
   );
 };
 
-const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading, customerType: propCustomerType, priceConfigs }) => {
+const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFormProps>(({ onSearch, isLoading, customerType: propCustomerType, priceConfigs, onStudentSearchAvailabilityChange }, ref) => {
   const { discounts: routeDiscounts } = useRouteDiscounts();
   // Helper function to get config values from database or fallback to defaults
   const getConfigValues = (mode: string) => {
@@ -571,16 +578,33 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
     };
   }, []);
 
-  const isFromKorea = ["ICN", "GMP", "PUS", "CJU", "TAE"].includes((formData.departure || "").toUpperCase());
+  const isFromKorea = airports.some((airport) => airport.country === "Korea" && airport.code === (formData.departure || "").toUpperCase());
   const [ptcCode, setPtcCode] = useState<string>("VFR");
   useEffect(() => {
     setPtcCode(isFromKorea ? "VFR" : "ADT");
   }, [isFromKorea]);
 
+  const submitSearch = (type = ptcCode, forceFresh = false) => {
+    onSearch({ ...formData, ptcCode: isFromKorea ? type : "ADT" }, { forceFresh });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch({ ...formData, ptcCode: isFromKorea ? ptcCode : "ADT" } as any);
+    submitSearch();
   };
+
+  useEffect(() => {
+    onStudentSearchAvailabilityChange?.(isFromKorea && ptcCode !== "STU");
+  }, [isFromKorea, ptcCode, onStudentSearchAvailabilityChange]);
+
+  useImperativeHandle(ref, () => ({
+    searchStudentFares: () => {
+      if (isLoading || !isFromKorea || ptcCode === "STU") return;
+      setPtcCode("STU");
+      // Explicit value avoids reading the previous React state during this click.
+      submitSearch("STU", true);
+    },
+  }));
 
   const handleSwapAirports = () => {
     setFormData((prev) => ({
@@ -1326,25 +1350,6 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="mb-3 flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">Type</label>
-          <select
-            value={isFromKorea ? ptcCode : "ADT"}
-            onChange={(e) => setPtcCode(e.target.value)}
-            disabled={!isFromKorea}
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm disabled:opacity-60"
-          >
-            {isFromKorea ? (
-              <>
-<option value="VFR">VFR</option>
-                <option value="ADT">ADT</option>
-                <option value="STU">STU</option>
-              </>
-            ) : (
-              <option value="ADT">ADT</option>
-            )}
-          </select>
-        </div>
         {/* Main form layout - responsive grid */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-start">
           {/* Column 1: Trip Type and Reset Button */}
@@ -1613,26 +1618,44 @@ const FlightSearchForm: React.FC<FlightSearchFormProps> = ({ onSearch, isLoading
             </div>
 
             {/* Search Button */}
-            <div className="pt-2">
-              <button
+            <div className="pt-2 flex items-end gap-2">
+              <div className="shrink-0">
+                <label htmlFor="vna-search-type" className="block text-xs font-medium text-muted-foreground mb-1">Type</label>
+                <select
+                  id="vna-search-type"
+                  value={isFromKorea ? ptcCode : "ADT"}
+                  onChange={(e) => setPtcCode(e.target.value)}
+                  disabled={!isFromKorea}
+                  className="h-9 w-20 rounded-md border border-input bg-background px-2 text-sm disabled:opacity-60"
+                >
+                  {isFromKorea ? (
+                    <>
+                      <option value="VFR">VFR</option>
+                      <option value="ADT">ADT</option>
+                      <option value="STU">STU</option>
+                    </>
+                  ) : (
+                    <option value="ADT">ADT</option>
+                  )}
+                </select>
+              </div>
+              <Button
                 type="submit"
+                size="sm"
                 disabled={isLoading}
-                className={`w-full py-2 px-4 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm text-white ${
-                  isCustomMode
-                    ? "bg-green-500 hover:bg-green-600"
-                    : customerType === "page"
-                      ? "bg-blue-500 hover:bg-blue-600"
-                      : "bg-red-500 hover:bg-red-600"
-                }`}
+                variant={isCustomMode ? "custom-price" : customerType === "page" ? "page-customer" : "live-customer"}
+                className="flex-1 min-w-0 px-2"
               >
                 {isLoading ? "TÌM KIẾM..." : "TÌM KIẾM"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </form>
     </div>
   );
-};
+});
+
+FlightSearchForm.displayName = "FlightSearchForm";
 
 export default FlightSearchForm;
