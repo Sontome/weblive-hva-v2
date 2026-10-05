@@ -36,13 +36,8 @@ export const validateMultiCity = (
   if (!koreanCodes.includes(legs[0].origin)) {
     return `Chặng 1 phải khởi hành từ Hàn Quốc (${koreanCodes.join("/")}).`;
   }
-  const last = legs[legs.length - 1].destination;
-  if (legs.length === 2 && !vietnamCodes.includes(last) && !koreanCodes.includes(last)) {
-    return `Hành trình 2 chặng: điểm đến chặng 2 phải ở Việt Nam hoặc Hàn Quốc (${koreanCodes.join("/")}).`;
-  }
-  if (legs.length >= 3 && !koreanCodes.includes(last)) {
-    return `Hành trình ${legs.length} chặng: điểm đến chặng cuối phải ở Hàn Quốc (${koreanCodes.join("/")}).`;
-  }
+  // Điểm đến chặng cuối đã được giới hạn ngay trong bộ chọn sân bay
+  // (2 chặng: VN hoặc Hàn; 3-4 chặng: chỉ Hàn) nên không cần chặn khi tìm kiếm.
   return null;
 };
 
