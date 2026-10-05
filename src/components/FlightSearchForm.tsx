@@ -739,9 +739,9 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
                 label="Nơi đến"
                 excludeCodes={[
                   ...(leg.origin ? [leg.origin] : []),
-                  // Middle legs (and the last leg of a 2-leg trip, which must end in Vietnam)
-                  // cannot arrive at a Korean airport; only the final leg of 3-4 leg trips may.
-                  ...(i === legs.length - 1 && legs.length >= 3 ? [] : koreanAirports),
+                  // Chỉ các chặng giữa không được hạ cánh ở sân bay Hàn; chặng cuối
+                  // (kể cả hành trình 2 chặng) được phép về sân bay Hàn.
+                  ...(i < legs.length - 1 ? koreanAirports : []),
                 ]}
               />
               <div>
