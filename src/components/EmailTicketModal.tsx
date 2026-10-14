@@ -190,30 +190,31 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
       }
   
       // Kakao OK mới gửi mail
-      const response = await fetch("https://apilive.hanvietair.com/proxy-gas", {
+      const response = await fetch("https://apilive.hanvietair.com/mail/queue/create", {
         method: "POST",
         headers: {
+          "accept": "*/*",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          khachHang: [
-            {
-              pnrs,
-              email: emailToUse,
-              tenKhach: formData.tenKhach,
-              xungHo: formData.xungHo,
-              sdt: formData.sdt,
-              guiChung: formData.guiChung,
-              banner: "",
-              type: formData.type,
-            },
-          ],
+          email: emailToUse,
+          customer_name: formData.tenKhach,
+          salutation: formData.xungHo,
+          pnrs,
+          banner: "",
+          type: formData.type,
+          phone: formData.sdt,
+          attachments: [],
         }),
       });
-  
+
       const result = await response.json();
-  
-      if (result?.status === "success") {
+
+      // Endpoint mới trả về { success: true, created: true, message, data }
+      const isSuccess = result?.success === true || result?.created === true || result?.status === "success";
+      if (!response.ok && !isSuccess) {
+        toast.error("Gửi mail thất bại");
+      } else if (isSuccess) {
         toast.success("Đã thêm hàng chờ gửi mail thành công");
         handleClose();
       } else {
