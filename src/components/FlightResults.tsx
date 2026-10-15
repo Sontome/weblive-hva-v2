@@ -674,6 +674,11 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           ? `VNairlines DHS 10kg xách tay, 46kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
           : `VNairlines 10kg xách tay, 46kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
       );
+    } else if (isVNA && baggageType === 'ADT') {
+      lines.push(
+        `VNairlines 10kg xách tay, 23kg ký gửi, giá vé = ${formatPriceForCopy(finalPrice)}w`
+      );
+    
 
     
     } else if (isVJ) {
