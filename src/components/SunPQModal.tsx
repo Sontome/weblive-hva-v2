@@ -215,7 +215,7 @@ const SunPQBookingForm: React.FC<{
         list_itinerary,
         list_passenger,
         contact_info: { email: email.trim(), phone_number: phone.trim(), full_name: fullName.trim() || 'Hanvietair' },
-        promo_code: '9GTOGETHER',
+        promo_code: '',
         corporate_code: '',
         currency: 'KRW',
         send_email: true,
