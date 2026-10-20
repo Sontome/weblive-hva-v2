@@ -25,7 +25,7 @@ export const searchSunPQFlights = async (searchData: FlightSearchData): Promise<
     adt: searchData.adults || 1,
     chd: searchData.children || 0,
     inf: searchData.infants || 0,
-    promo_code: '9GTOGETHER',
+    promo_code: '',
     currency: 'KRW',
   };
   if (isRT) body.arr_date = searchData.returnDate || searchData.departureDate;
