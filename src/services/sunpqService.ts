@@ -70,11 +70,31 @@ export const checkSunPQPnr = async (pnr: string) => {
   const res = await fetch(`${SUNPQ_BASE}/checkpnr`, {
     method: 'POST',
     headers: { accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'omit',
     body: JSON.stringify({ pnr }),
   });
   const data = await res.json().catch(() => ({}));
   logTag('SUNPQ_CHECKPNR_RESPONSE', data);
-  if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+  if (!res.ok) throw new Error(data?.message || data?.detail || `HTTP ${res.status}`);
+  return data;
+};
+
+export const changeSunPQPnr = async (
+  pnr: string,
+  oldItinerary: unknown[],
+  newItinerary: unknown[]
+) => {
+  const payload = { pnr, old_itinerary: oldItinerary, new_itinerary: newItinerary };
+  logTag('SUNPQ_CHANGEPNR_REQUEST', payload);
+  const res = await fetch(`${SUNPQ_BASE}/change-pnr`, {
+    method: 'POST',
+    headers: { accept: 'application/json', 'Content-Type': 'application/json' },
+    credentials: 'omit',
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  logTag('SUNPQ_CHANGEPNR_RESPONSE', data);
+  if (!res.ok) throw new Error(data?.message || data?.detail || data?.error || `HTTP ${res.status}`);
   return data;
 };
 
