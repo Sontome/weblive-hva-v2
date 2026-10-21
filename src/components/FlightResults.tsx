@@ -6,6 +6,7 @@ import { VNABookingModal } from './VNABookingModal';
 import { OtherAirlinesModal } from './OtherAirlinesModal';
 import { SunPQModal, calculateSunPQFinalPrice } from './SunPQModal';
 import { SunPQFlightCard } from './SunPQFlightCard';
+import ChangeTicketSunModal from './change-ticket-sun/ChangeTicketSunModal';
 import type { SunPQTrip } from '@/types/sunpq';
 import { getPremiaBaggageLabel } from '@/services/premiaService';
 import { Button } from './ui/button';
@@ -292,6 +293,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   const { getDiscount: getRouteDiscount } = useRouteDiscounts();
   const [changeTicketOpen, setChangeTicketOpen] = useState(false);
   const [changeTicketFlight, setChangeTicketFlight] = useState<FlightResult | null>(null);
+  const [sunChangeTrip, setSunChangeTrip] = useState<SunPQTrip | null>(null);
   const [changeVJOpen, setChangeVJOpen] = useState(false);
   const [changeVJFlight, setChangeVJFlight] = useState<FlightResult | null>(null);
   const [stuModalOpen, setStuModalOpen] = useState(false);
@@ -1322,6 +1324,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
                         trip={preferred}
                         searchData={searchData as any}
                         onBook={() => setSunpqModalOpen(true)}
+                        onChange={() => setSunChangeTrip(preferred)}
                       />
                     )}
                   </div>
@@ -1476,6 +1479,12 @@ const FlightResults: React.FC<FlightResultsProps> = ({
             setChangeTicketFlight(null);
           }}
           flight={changeTicketFlight as unknown as { chiều_đi?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string }; chiều_về?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string } } | null}
+        />
+
+        <ChangeTicketSunModal
+          isOpen={!!sunChangeTrip}
+          onClose={() => setSunChangeTrip(null)}
+          trip={sunChangeTrip}
         />
 
         <CheckSTUVNAModal
@@ -1662,6 +1671,12 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           setChangeTicketFlight(null);
         }}
         flight={changeTicketFlight as unknown as { chiều_đi?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string }; chiều_về?: { nơi_đi?: string; nơi_đến?: string; ngày_cất_cánh?: string; giờ_cất_cánh?: string } } | null}
+      />
+
+      <ChangeTicketSunModal
+        isOpen={!!sunChangeTrip}
+        onClose={() => setSunChangeTrip(null)}
+        trip={sunChangeTrip}
       />
 
       <CheckSTUVNAModal
