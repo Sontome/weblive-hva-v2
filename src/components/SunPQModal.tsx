@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plane, Users, Copy } from 'lucide-react';
+import { Plane, Users, Copy, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -12,6 +12,7 @@ import { bookingSunPQ, checkSunPQPnr, searchSunPQFlights } from '@/services/sunp
 import { saveHeldTicket } from '@/services/heldTicketService';
 import type { HoldTicketSegmentInput } from '@/types/heldTicket';
 import SunPQTicketModal from './SunPQTicketModal';
+import ChangeTicketSunModal from './change-ticket-sun/ChangeTicketSunModal';
 import LowFareChart from './LowFareChart';
 import { useTicketRulesDataset } from '@/hooks/useTicketRules';
 import { applyTicketRules, formatNotesLine } from '@/services/ticketRuleEngine';
@@ -132,6 +133,7 @@ const generateBodyText = (
   const lines: string[] = [];
   lines.push(`${buildRouteStr(out)} ${out.giờ_cất_cánh} ngày ${fmtDate(out.ngày_cất_cánh)}`);
   if (ret) lines.push(`${buildRouteStr(ret)} ${ret.giờ_cất_cánh} ngày ${fmtDate(ret.ngày_cất_cánh)}`);
+  
   lines.push(`SunPQ 7kg xách tay, ${baggageLine || '23kg ký gửi'}, giá vé = ${formatPrice(finalPrice)}w`);
   return lines.join('\n');
 };
@@ -378,6 +380,7 @@ export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchDa
   );
   const [bookingTrip, setBookingTrip] = useState<SunPQTrip | null>(null);
   const [ticketPNR, setTicketPNR] = useState<string | null>(null);
+  const [changeTrip, setChangeTrip] = useState<SunPQTrip | null>(null);
 
   const currency = currentLowerFare?.currency || 'KRW';
   const formatLowFarePrice = (v: number) => {
@@ -491,8 +494,16 @@ export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchDa
                       <span className="bg-orange-500 text-white px-2 py-0.5 rounded text-xs font-bold">SUNPQ</span>
                       <span className="text-lg font-bold text-gray-800">{formatPrice(finalPrice)} KRW</span>
                     </div>
-                    <div className="flex items-center text-xs text-gray-600">
+                    <div className="flex items-center gap-1 text-xs text-gray-600">
                       <Users className="w-3 h-3 mr-1" /> Còn {seats} ghế
+                      <button
+                        onClick={() => setChangeTrip(trip)}
+                        title="Đổi vé SunPQ"
+                        aria-label="Đổi vé SunPQ"
+                        className="ml-1 inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-md border border-amber-300 transition-colors"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
                   <div className="text-xs text-gray-600 mb-2">{classSummary}</div>
@@ -561,6 +572,12 @@ export const SunPQModal: React.FC<Props> = ({ isOpen, onClose, flights, searchDa
           initialPNR={ticketPNR}
         />
       )}
+
+      <ChangeTicketSunModal
+        isOpen={!!changeTrip}
+        onClose={() => setChangeTrip(null)}
+        trip={changeTrip}
+      />
     </>
   );
 };
