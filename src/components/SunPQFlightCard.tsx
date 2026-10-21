@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Copy } from 'lucide-react';
+import { Users, Copy, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SunPQTrip } from '@/types/sunpq';
 import { calculateSunPQFinalPrice } from './SunPQModal';
@@ -23,6 +23,7 @@ interface Props {
   trip: SunPQTrip;
   searchData: SearchDataLike | null;
   onBook?: () => void;
+  onChange?: () => void;
 }
 
 const formatPrice = (price: number) => {
@@ -91,7 +92,7 @@ const generateBodyText = (trip: SunPQTrip, finalPrice: number, baggageLine?: str
   return lines.join('\n');
 };
 
-export const SunPQFlightCard: React.FC<Props> = ({ trip, searchData, onBook }) => {
+export const SunPQFlightCard: React.FC<Props> = ({ trip, searchData, onBook, onChange }) => {
   const { data: rulesDataset } = useTicketRulesDataset();
   const tripType = searchData?.tripType || 'OW';
   const base = getBasePrice(trip);
@@ -114,8 +115,18 @@ export const SunPQFlightCard: React.FC<Props> = ({ trip, searchData, onBook }) =
           <span className="bg-orange-500 text-white px-2 py-0.5 rounded text-xs font-bold">SUNPQ</span>
           <span className="text-lg font-bold text-gray-800">{formatPrice(finalPrice)} KRW</span>
         </div>
-        <div className="flex items-center text-xs text-gray-600">
+        <div className="flex items-center gap-1 text-xs text-gray-600">
           <Users className="w-3 h-3 mr-1" /> Còn {seats} ghế
+          {onChange && (
+            <button
+              onClick={onChange}
+              title="Đổi vé SunPQ"
+              aria-label="Đổi vé SunPQ"
+              className="ml-1 inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-md border border-amber-300 transition-colors"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </button>
+          )}
         </div>
       </div>
       <div className="text-xs text-gray-600 mb-2">{classSummary}</div>
