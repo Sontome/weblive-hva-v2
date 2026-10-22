@@ -65,6 +65,8 @@ const paxTypeLabel = (t?: string) => {
 
 interface SegRowProps {
   selected: boolean;
+  selectionOrder?: number;
+  disabled?: boolean;
   onSelect?: () => void;
   readOnly?: boolean;
   highlight?: boolean;
@@ -81,6 +83,8 @@ interface SegRowProps {
 
 const SegmentRow: React.FC<SegRowProps> = ({
   selected,
+  selectionOrder,
+  disabled,
   onSelect,
   readOnly,
   highlight,
@@ -109,6 +113,7 @@ const SegmentRow: React.FC<SegRowProps> = ({
         <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
           <Plane className="h-4 w-4 text-orange-500" />
           <span>{flightNo || 'Chuyến bay'}</span>
+          {selectionOrder && <span className="text-xs font-semibold text-primary">Cặp {selectionOrder}</span>}
           {bookingClass && (
             <span className="px-1.5 py-0.5 rounded bg-gray-100 text-xs font-medium text-gray-700">
               Hạng {bookingClass}
@@ -144,15 +149,13 @@ const SegmentRow: React.FC<SegRowProps> = ({
         )}
       </div>
       {!readOnly && onSelect && (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
+          disabled={disabled}
           onClick={onSelect}
-          className={[
-            'shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border transition-colors',
-            selected
-              ? 'border-orange-400 bg-orange-100 text-orange-700 hover:bg-orange-200'
-              : 'border-gray-300 text-gray-700 hover:bg-gray-50',
-          ].join(' ')}
+          className="shrink-0 gap-1 h-7 px-2 text-xs"
         >
           {selected ? (
             <>
@@ -162,7 +165,7 @@ const SegmentRow: React.FC<SegRowProps> = ({
           ) : (
             'Chọn'
           )}
-        </button>
+        </Button>
       )}
     </div>
   </div>
@@ -177,8 +180,9 @@ export const ChangeTicketSunModal: React.FC<Props> = ({ isOpen, onClose, trip })
     setPnr,
     checkedPnr,
     checkData,
-    oldSegment,
-    newSegment,
+    oldSegments,
+    newSegments,
+    pairingMatched,
     selectOld,
     selectNew,
     result,
@@ -190,7 +194,7 @@ export const ChangeTicketSunModal: React.FC<Props> = ({ isOpen, onClose, trip })
     reset,
     markClosed,
     markOpen,
-  } = useChangeTicketSun();
+  } = useChangeTicketSun(trip);
 
   useEffect(() => {
     if (isOpen) {
@@ -225,14 +229,14 @@ export const ChangeTicketSunModal: React.FC<Props> = ({ isOpen, onClose, trip })
   useEffect(() => {
     if (stage === 'segments' && checkData) {
       const all = [...(checkData.chieudi ?? []), ...(checkData.chieuve ?? [])];
-      if (all.length === 1 && !oldSegment) selectOld(all[0]);
+      if (all.length === 1 && oldSegments.length === 0) selectOld(all[0]);
     }
-  }, [stage, checkData, oldSegment, selectOld]);
+  }, [stage, checkData, oldSegments, selectOld]);
 
   useEffect(() => {
     const all = newLegs.flatMap((g) => g.segs);
-    if (all.length === 1 && !newSegment) selectNew(all[0]);
-  }, [newLegs, newSegment, selectNew]);
+    if (all.length === 1 && newSegments.length === 0) selectNew(all[0]);
+  }, [newLegs, newSegments, selectNew]);
 
   // Giá hiển thị sau khi đổi thành công — bấm vào từng khoản để sửa
   const [editingField, setEditingField] = useState<'giagoc' | 'thuephi' | 'phidoi' | null>(null);
@@ -336,7 +340,9 @@ export const ChangeTicketSunModal: React.FC<Props> = ({ isOpen, onClose, trip })
     return (
       <SegmentRow
         key={key}
-        selected={oldSegment === seg}
+        selected={oldSegments.includes(seg)}
+        selectionOrder={oldSegments.indexOf(seg) + 1 || undefined}
+        disabled={checking || changing || (!oldSegments.includes(seg) && oldSegments.length >= 2)}
         onSelect={() => selectOld(seg)}
         flightNo={flightNoOf(seg)}
         from={seg.departure || ''}
@@ -354,7 +360,9 @@ export const ChangeTicketSunModal: React.FC<Props> = ({ isOpen, onClose, trip })
   const renderNewSeg = (seg: SunPQItinerarySegment, key: React.Key, readOnly = false) => (
     <SegmentRow
       key={key}
-      selected={newSegment === seg}
+      selected={newSegments.includes(seg)}
+      selectionOrder={readOnly ? undefined : newSegments.indexOf(seg) + 1 || undefined}
+      disabled={checking || changing || (!newSegments.includes(seg) && newSegments.length >= 2)}
       onSelect={readOnly ? undefined : () => selectNew(seg)}
       readOnly={readOnly}
       flightNo={flightNoOf(seg)}
@@ -377,7 +385,6 @@ export const ChangeTicketSunModal: React.FC<Props> = ({ isOpen, onClose, trip })
           </div>
           <div>
             <h2 className="text-base font-semibold text-gray-900">Đổi vé SunPQ</h2>
-            <p className="text-xs text-gray-500">Đổi 1 chặng cũ sang 1 chặng mới theo PNR</p>
           </div>
         </div>
 
@@ -461,10 +468,10 @@ export const ChangeTicketSunModal: React.FC<Props> = ({ isOpen, onClose, trip })
               )}
             </div>
 
-            {/* Hành trình hiện tại — chọn 1 chặng cần thay */}
+            {/* Hành trình hiện tại — chọn tối đa 2 chặng cần thay */}
             <div className="space-y-2">
               <div className="text-sm font-semibold text-gray-700">
-                Hành trình hiện tại — chọn chặng cần thay
+                Hành trình hiện tại — chọn chặng cần thay ({oldSegments.length}/2)
               </div>
               {oldLegs.map((g) => (
                 <div key={g.label} className="space-y-1.5">
@@ -478,7 +485,7 @@ export const ChangeTicketSunModal: React.FC<Props> = ({ isOpen, onClose, trip })
             {newLegs.length > 0 && (
               <div className="space-y-2">
                 <div className="text-sm font-semibold text-gray-700">
-                  Hành trình mới (từ kết quả tìm kiếm)
+                  Hành trình mới (từ kết quả tìm kiếm) ({newSegments.length}/2)
                 </div>
                 {newLegs.map((g) => (
                   <div key={g.label} className="space-y-1.5">
@@ -490,18 +497,23 @@ export const ChangeTicketSunModal: React.FC<Props> = ({ isOpen, onClose, trip })
             )}
 
             {/* Tóm tắt lựa chọn */}
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-gray-800 flex items-center gap-2 flex-wrap">
-              {oldSegment && newSegment ? (
-                <>
-                  <span>Thay chặng</span>
-                  <span className="font-semibold">{segLabel(oldSegment)}</span>
-                  <ArrowRight className="h-4 w-4 text-amber-600" />
-                  <span className="font-semibold">{segLabel(newSegment)}</span>
-                </>
-              ) : (
-                <span className="text-gray-600">
-                  Chọn 1 chặng cũ và 1 chặng mới để đổi vé
-                </span>
+            <div className="border border-border bg-muted p-3 text-sm text-foreground space-y-2 rounded-lg">
+              {Array.from({ length: Math.max(oldSegments.length, newSegments.length) }, (_, index) => (
+                <div key={index} className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold">Cặp {index + 1}:</span>
+                  <span>{oldSegments[index] ? segLabel(oldSegments[index]) : 'Chưa chọn chặng cũ'}</span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
+                  <span>{newSegments[index] ? segLabel(newSegments[index]) : 'Chưa chọn chặng mới'}</span>
+                </div>
+              ))}
+              {oldSegments.length === 0 && newSegments.length === 0 && (
+                <span className="text-muted-foreground">Chưa chọn chặng</span>
+              )}
+              {oldSegments.length !== newSegments.length && (
+                <p className="text-destructive">Số chặng cũ và mới chưa khớp ({oldSegments.length}/{newSegments.length})</p>
+              )}
+              {oldSegments.length === 2 && newSegments.length === 2 && !pairingMatched && (
+                <p className="text-destructive">Chặng cũ và mới chưa khớp chiều đi / chiều về</p>
               )}
             </div>
 
@@ -611,12 +623,11 @@ export const ChangeTicketSunModal: React.FC<Props> = ({ isOpen, onClose, trip })
                 <div className="space-y-1.5">
                   <div className="text-sm font-semibold text-gray-700">Hành trình sau đổi</div>
                   {result.data.list_itinerary.map((seg, i) => {
-                    const isNew =
-                      newSegment &&
+                    const isNew = newSegments.some((newSegment) =>
                       seg.departure === newSegment.departure &&
                       seg.arrival === newSegment.arrival &&
                       seg.flight_date === newSegment.flight_date &&
-                      String(seg.flight_number) === String(newSegment.flight_number);
+                      String(seg.flight_number) === String(newSegment.flight_number));
                     return (
                       <div key={i} className="relative">
                         {renderNewSeg(seg, `after-${i}`, true)}
