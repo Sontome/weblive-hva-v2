@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { checkSunPQPnr, changeSunPQPnr } from '@/services/sunpqService';
 import type {
@@ -6,26 +6,33 @@ import type {
   SunPQChangeResponse,
   SunPQCurrentSegment,
 } from '@/types/changeTicketSun';
-import type { SunPQItinerarySegment } from '@/types/sunpq';
+import type { SunPQItinerarySegment, SunPQTrip } from '@/types/sunpq';
+import { buildSunChangePayload, pairSunChangeSegments, toggleSunSegment } from '@/lib/sunpqChangeSelection';
 
 type Stage = 'input' | 'segments' | 'result';
 
 const errMsg = (e: unknown, fallback: string) =>
   e instanceof Error && e.message ? e.message : fallback;
 
-export function useChangeTicketSun() {
+export function useChangeTicketSun(trip: SunPQTrip | null) {
   const [stage, setStage] = useState<Stage>('input');
   const [pnr, setPnrState] = useState('');
   const [checkedPnr, setCheckedPnr] = useState('');
   const [checkData, setCheckData] = useState<SunPQCheckPnrData | null>(null);
-  const [oldSegment, setOldSegment] = useState<SunPQCurrentSegment | null>(null);
-  const [newSegment, setNewSegment] = useState<SunPQItinerarySegment | null>(null);
+  const [oldSelected, setOldSegments] = useState<SunPQCurrentSegment[]>([]);
+  const [newSelected, setNewSegments] = useState<SunPQItinerarySegment[]>([]);
+  const { oldSegments, newSegments, matched } = useMemo(() => pairSunChangeSegments(
+    oldSelected, newSelected,
+    [checkData?.chieudi ?? [], checkData?.chieuve ?? []],
+    [trip?.chiều_đi?.list_itinerary ?? [], trip?.chiều_về?.list_itinerary ?? []],
+  ), [oldSelected, newSelected, checkData, trip]);
   const [result, setResult] = useState<SunPQChangeResponse | null>(null);
   const [checking, setChecking] = useState(false);
   const [changing, setChanging] = useState(false);
   const [changed, setChanged] = useState(false);
   const requestSeq = useRef(0);
   const alive = useRef(true);
+  const changeInFlight = useRef(false);
 
   const reset = useCallback(() => {
     requestSeq.current += 1;
@@ -33,8 +40,8 @@ export function useChangeTicketSun() {
     setPnrState('');
     setCheckedPnr('');
     setCheckData(null);
-    setOldSegment(null);
-    setNewSegment(null);
+    setOldSegments([]);
+    setNewSegments([]);
     setResult(null);
     setChecking(false);
     setChanging(false);
@@ -44,12 +51,13 @@ export function useChangeTicketSun() {
   /** Sửa PNR sau khi kiểm tra -> hủy hiệu lực dữ liệu kiểm tra, lựa chọn và kết quả cũ */
   const setPnr = useCallback(
     (value: string) => {
+      if (changeInFlight.current) return;
       const next = value.toUpperCase().slice(0, 6);
       setPnrState(next);
       if (next !== checkedPnr) {
         requestSeq.current += 1; // bỏ qua response checkpnr đang chạy
         setCheckData(null);
-        setOldSegment(null);
+        setOldSegments([]);
         setResult(null);
         setChanged(false);
         setChecking(false);
@@ -60,6 +68,7 @@ export function useChangeTicketSun() {
   );
 
   const runCheck = useCallback(async () => {
+    if (changeInFlight.current) return;
     const code = pnr.trim().toUpperCase();
     if (!code) {
       toast.error('Vui lòng nhập PNR');
@@ -80,7 +89,7 @@ export function useChangeTicketSun() {
       }
       setCheckedPnr(code);
       setCheckData(data);
-      setOldSegment(null);
+      setOldSegments([]);
       setResult(null);
       setChanged(false);
       setStage('segments');
@@ -93,25 +102,30 @@ export function useChangeTicketSun() {
   }, [pnr]);
 
   const selectOld = useCallback((seg: SunPQCurrentSegment) => {
-    setOldSegment((prev) => (prev === seg ? null : seg));
-  }, []);
+    if (changeInFlight.current || checking || changed) return;
+    setOldSegments((prev) => toggleSunSegment(prev, seg));
+  }, [checking, changed]);
 
   const selectNew = useCallback((seg: SunPQItinerarySegment) => {
-    setNewSegment((prev) => (prev === seg ? null : seg));
-  }, []);
+    if (changeInFlight.current || checking || changed) return;
+    setNewSegments((prev) => toggleSunSegment(prev, seg));
+  }, [checking, changed]);
 
   const canConfirm =
-    Boolean(checkedPnr && checkData && oldSegment && newSegment) &&
+    Boolean(checkedPnr && checkData && matched) &&
     !checking &&
     !changing &&
     !changed;
 
   const runChange = useCallback(async () => {
-    if (!canConfirm || !oldSegment || !newSegment) return;
+    if (!canConfirm || changeInFlight.current) return;
+    changeInFlight.current = true;
+    const seq = requestSeq.current;
     setChanging(true);
     try {
-      const res = await changeSunPQPnr(checkedPnr, [oldSegment], [newSegment]);
-      if (!alive.current) return;
+      const payload = buildSunChangePayload(checkedPnr, oldSegments, newSegments);
+      const res = await changeSunPQPnr(payload.pnr, payload.old_itinerary, payload.new_itinerary);
+      if (!alive.current || seq !== requestSeq.current) return;
       if (!res?.success) {
         toast.error(res?.message || res?.detail || res?.error || 'Đổi vé SunPQ không thành công');
         return;
@@ -121,20 +135,22 @@ export function useChangeTicketSun() {
       setStage('result');
       toast.success('Đổi vé SunPQ thành công');
     } catch (e) {
-      if (!alive.current) return;
+      if (!alive.current || seq !== requestSeq.current) return;
       // Mất kết nối/timeout: không tự gửi lại, yêu cầu kiểm tra lại PNR
       toast.error(
         'Chưa xác định được kết quả đổi vé. Vui lòng kiểm tra lại PNR trước khi thực hiện tiếp.'
       );
+      setChanging(false);
       requestSeq.current += 1;
       setCheckData(null);
-      setOldSegment(null);
+      setOldSegments([]);
       setCheckedPnr('');
       setStage('input');
     } finally {
-      if (alive.current) setChanging(false);
+      changeInFlight.current = false;
+      if (alive.current && seq === requestSeq.current) setChanging(false);
     }
-  }, [canConfirm, checkedPnr, oldSegment, newSegment]);
+  }, [canConfirm, checkedPnr, oldSegments, newSegments]);
 
   const markClosed = useCallback(() => {
     alive.current = false;
@@ -150,8 +166,9 @@ export function useChangeTicketSun() {
     setPnr,
     checkedPnr,
     checkData,
-    oldSegment,
-    newSegment,
+    oldSegments,
+    newSegments,
+    pairingMatched: matched,
     selectOld,
     selectNew,
     result,
