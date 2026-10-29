@@ -4,6 +4,9 @@ import { toast } from "sonner";
 import { extractMultiCityLegs } from "@/services/vnaMultiCityService";
 import { useRouteDiscounts } from "@/hooks/useRouteDiscounts";
 import { calculateVnaRtPrice, type VnaRtPricingConfig } from "@/lib/vnaPricing";
+import { Button } from '@/components/ui/button';
+import { VNABookingModal } from '@/components/VNABookingModal';
+import type { VnaBookingType, VnaMultiCityItinerary } from '@/services/vnaMultiCityBookingService';
 
 interface Props {
   results: any[];
@@ -15,6 +18,8 @@ interface Props {
   /** Same behavior as the VNA card student-fare button: switch search type to STU and re-search. */
   canSearchStudentFares?: boolean;
   onSearchStudentFares?: () => void;
+  ptcCode?: VnaBookingType;
+  onBookingSuccess?: (pnr: string) => void;
 }
 
 const formatPriceForCopy = (price: number) =>
@@ -26,9 +31,10 @@ const formatShortDate = (dateStr?: string) => {
   return `${day}/${month}`;
 };
 
-const VnaMultiCityResults: React.FC<Props> = ({ results, isLoading, error, hasSearched, priceConfig, canSearchStudentFares, onSearchStudentFares }) => {
+const VnaMultiCityResults: React.FC<Props> = ({ results, isLoading, error, hasSearched, priceConfig, canSearchStudentFares, onSearchStudentFares, ptcCode, onBookingSuccess }) => {
   const { getDiscount: getRouteDiscount } = useRouteDiscounts();
   const [expandedDetails, setExpandedDetails] = useState<Record<number, boolean>>({});
+  const [booking, setBooking] = useState<{ itinerary: VnaMultiCityItinerary; type: VnaBookingType } | null>(null);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -50,6 +56,7 @@ const VnaMultiCityResults: React.FC<Props> = ({ results, isLoading, error, hasSe
   }
 
   return (
+    <>
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
       {results.map((row, idx) => {
         const legs = extractMultiCityLegs(row);
@@ -156,21 +163,38 @@ const VnaMultiCityResults: React.FC<Props> = ({ results, isLoading, error, hasSe
                 </div>
               </div>
 
-              {/* Hold button — same look as VNA, disabled until developed */}
+              {/* Reuse the VNA passenger form with the clicked multi-city itinerary. */}
               <div className="mt-auto pt-2 flex justify-end">
-                <button
-                  disabled
-                  title="Chức năng giữ vé nhiều chặng đang được phát triển"
-                  className="flex items-center space-x-1 bg-blue-500 text-white px-2 py-1 rounded text-xs opacity-50 cursor-not-allowed"
+                <Button
+                  disabled={!legs.length || !(Number(info.số_ghế_còn) > 0)}
+                  onClick={() => setBooking({ itinerary: structuredClone(row), type: ptcCode ?? (baggageType === 'STU' || baggageType === 'ADT' ? baggageType : 'VFR') })}
+                  size="sm"
+                  variant="page-customer"
+                  className="h-7 px-2 text-xs"
                 >
                   <span className="text-xs font-medium">Giữ Vé</span>
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         );
       })}
     </div>
+    {booking && (() => {
+      const legs = extractMultiCityLegs(booking.itinerary);
+      const first = legs[0];
+      if (!first) return null;
+      return <VNABookingModal
+        isOpen
+        onClose={() => setBooking(null)}
+        flightInfo={{ dep: first.nơi_đi, arr: first.nơi_đến, depdate: first.ngày_cất_cánh, deptime: first.giờ_cất_cánh, tripType: 'MD' }}
+        multiCityItinerary={booking.itinerary}
+        maxSeats={Number(booking.itinerary.thông_tin_chung?.số_ghế_còn) || 0}
+        doiTuong={booking.type}
+        onBookingSuccess={onBookingSuccess}
+      />;
+    })()}
+    </>
   );
 };
 
