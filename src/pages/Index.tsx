@@ -307,6 +307,7 @@ const Index = () => {
   const [multiCityResults, setMultiCityResults] = useState<any[]>([]);
   const [multiCityError, setMultiCityError] = useState<string | null>(null);
   const [multiCitySearched, setMultiCitySearched] = useState(false);
+  const [multiCityPtcCode, setMultiCityPtcCode] = useState<'VFR' | 'ADT' | 'STU'>('VFR');
   const multiCityReqRef = useRef(0);
 
   // VNA round-trip fee/discount settings applied to multi-city prices
@@ -326,6 +327,7 @@ const Index = () => {
   const handleMultiCitySearch = async (data: MultiCitySearchData) => {
     const reqId = ++multiCityReqRef.current;
     setMultiCityMode(true);
+    setMultiCityPtcCode(data.ptcCode === 'STU' || data.ptcCode === 'ADT' ? data.ptcCode : 'VFR');
     setMultiCitySearched(true);
     setMultiCityResults([]);
     setMultiCityError(null);
@@ -864,6 +866,11 @@ const Index = () => {
             error={multiCityError}
             hasSearched={multiCitySearched}
             priceConfig={vnaRtConfig}
+            ptcCode={multiCityPtcCode}
+            onBookingSuccess={(pnr) => {
+              setVnaTicketInitialPNR(pnr);
+              setShowVNATicketModal(true);
+            }}
             canSearchStudentFares={canSearchStudentFares}
             onSearchStudentFares={() => searchFormRef.current?.searchStudentFares()}
           />
