@@ -53,12 +53,12 @@ export const buildMultiCityPayload = (data: MultiCitySearchData) => ({
   ptc_code: data.ptcCode,
 });
 
-/** VNA-only multi-city search (check-ve-v4, trip_type MD). */
+/** VNA-only multi-city search (check-ve-v5, trip_type MD). */
 export const searchVnaMultiCity = async (
   data: MultiCitySearchData,
 ): Promise<{ status_code: number; body: any[]; error?: string }> => {
   try {
-    const res = await fetch("https://apilive.hanvietair.com/vna/check-ve-v4", {
+    const res = await fetch("https://apilive.hanvietair.com/vna/check-ve-v5", {
       method: "POST",
       headers: { accept: "application/json", "Content-Type": "application/json" },
       body: JSON.stringify(buildMultiCityPayload(data)),
