@@ -15,14 +15,25 @@ export interface VnaV3Passengers {
 
 export type VnaMultiCityItinerary = Record<string, any>;
 
-export const buildVnaMultiCityBookingRequest = (
+export const buildVnaBookingV3Request = (
   itinerary: VnaMultiCityItinerary,
   passengers: VnaV3Passengers,
   doiTuong: VnaBookingType,
   contacts: { email?: string; phone?: string },
 ) => {
-  const legs = Object.keys(itinerary).filter((key) => /^chặng_\d+$/.test(key));
-  if (legs.length < 2 || legs.length > 4) throw new Error('Hành trình phải có từ 2 đến 4 chặng.');
+  if (Array.isArray(itinerary.chiều_đi)) {
+    if (!itinerary.chiều_đi.length || (itinerary.chiều_về !== undefined && !Array.isArray(itinerary.chiều_về))) {
+      throw new Error('Hành trình VNA không hợp lệ. Vui lòng tìm kiếm lại.');
+    }
+    for (const segment of [...itinerary.chiều_đi, ...(itinerary.chiều_về ?? [])]) {
+      if (!segment?.nơi_đi || !segment?.nơi_đến || !segment?.số_hiệu_máy_bay || !segment?.loại_vé || !segment?.ngày_cất_cánh) {
+        throw new Error('Thiếu thông tin chặng bay. Vui lòng tìm kiếm lại.');
+      }
+    }
+  } else {
+    const legs = Object.keys(itinerary).filter((key) => /^chặng_\d+$/.test(key));
+    if (legs.length < 2 || legs.length > 4) throw new Error('Hành trình phải có từ 2 đến 4 chặng.');
+  }
   if (passengers.adults.length + passengers.children.length === 0) throw new Error('Phải có ít nhất một hành khách chiếm ghế.');
   if (passengers.infants.length > passengers.adults.length) throw new Error('Mỗi em bé phải có một người lớn đi kèm.');
   for (const passenger of [...passengers.children, ...passengers.infants]) {
@@ -50,7 +61,7 @@ const apiMessage = (data: any): string => {
       if (messages.length) return messages.join('; ');
     }
   }
-  return 'Không thể giữ vé VNA nhiều chặng. Vui lòng kiểm tra lại thông tin.';
+  return 'Không thể giữ vé VNA. Vui lòng kiểm tra lại thông tin.';
 };
 
 export const parseVnaMultiCityBookingResponse = (data: any, httpOk = true) => {
@@ -59,13 +70,13 @@ export const parseVnaMultiCityBookingResponse = (data: any, httpOk = true) => {
   return { pnr, deadline: typeof data?.['hạn_thanh_toán'] === 'string' ? data['hạn_thanh_toán'] : undefined };
 };
 
-export const bookVnaMultiCity = async (
+export const bookVnaV3 = async (
   itinerary: VnaMultiCityItinerary,
   passengers: VnaV3Passengers,
   doiTuong: VnaBookingType,
   contacts: { email?: string; phone?: string },
 ) => {
-  const request = buildVnaMultiCityBookingRequest(itinerary, passengers, doiTuong, contacts);
+  const request = buildVnaBookingV3Request(itinerary, passengers, doiTuong, contacts);
   let response: Response;
   try {
     response = await fetch(request.url, {
@@ -82,3 +93,7 @@ export const bookVnaMultiCity = async (
   }
   return parseVnaMultiCityBookingResponse(data, response.ok);
 };
+
+// Existing MD callers retain their public names and the same contract.
+export const buildVnaMultiCityBookingRequest = buildVnaBookingV3Request;
+export const bookVnaMultiCity = bookVnaV3;
