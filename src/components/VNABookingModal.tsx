@@ -9,9 +9,8 @@ import { toast } from '@/hooks/use-toast';
 import { format, differenceInYears, differenceInDays } from 'date-fns';
 import { DateInput } from './DateInput';
 import { saveHeldTicket } from '@/services/heldTicketService';
-import type { HoldTicketSegmentInput } from '@/types/heldTicket';
-import { bookVnaMultiCity, type VnaMultiCityItinerary, type VnaV3Passengers, type VnaV3Passenger } from '@/services/vnaMultiCityBookingService';
-import { extractMultiCityLegs } from '@/services/vnaMultiCityService';
+import { bookVnaV3, type VnaMultiCityItinerary, type VnaV3Passengers, type VnaV3Passenger } from '@/services/vnaMultiCityBookingService';
+import { getVnaBookingSegments } from '@/lib/vnaItinerary';
 
 
 interface InfantInfo {
@@ -43,6 +42,7 @@ interface VNABookingModalProps {
     tripType: 'OW' | 'RT' | 'MD';
   };
   multiCityItinerary?: VnaMultiCityItinerary;
+  selectedItinerary?: VnaMultiCityItinerary;
   maxSeats: number;
   /** Loại vé VFR/ADT/STU chọn lúc tìm kiếm — form giữ vé mặc định theo giá trị này và khóa lại */
   doiTuong?: 'VFR' | 'ADT' | 'STU';
@@ -56,8 +56,10 @@ export const VNABookingModal = ({
   maxSeats,
   doiTuong: doiTuongProp,
   multiCityItinerary,
+  selectedItinerary,
   onBookingSuccess
 }: VNABookingModalProps) => {
+  const bookingItinerary = multiCityItinerary ?? selectedItinerary;
   const [passengers, setPassengers] = useState<PassengerInfo[]>([
     {
       Họ: '',
@@ -74,23 +76,6 @@ export const VNABookingModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const bookingInFlight = useRef(false);
   const [successData, setSuccessData] = useState<{ pnr: string; deadline?: string } | null>(null);
-
-  // Remove Vietnamese diacritics
-  // Convert date from "24/04/2026" to "24APR"
-  const formatDateForAPI = (dateStr: string) => {
-    const [day, month, year] = dateStr.split('/');
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    return `${day}${months[parseInt(month) - 1]}`;
-  };
-
-  // Format date of birth to API format (01JAN18)
-  const formatDOBForAPI = (date: Date) => {
-    const day = format(date, 'dd');
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    const month = months[date.getMonth()];
-    const year = format(date, 'yy');
-    return `${day}${month}${year}`;
-  };
 
   const removeVietnameseDiacritics = (str: string) => {
     const vietnameseMap: { [key: string]: string } = {
@@ -140,36 +125,6 @@ export const VNABookingModal = ({
     const ageInDays = differenceInDays(today, dob);
     const twoYearsInDays = 2 * 365;
     return ageInDays >= 0 && ageInDays < twoYearsInDays;
-  };
-
-  const formatNameForAPI = (passenger: PassengerInfo) => {
-    const lastName = removeVietnameseDiacritics(passenger.Họ.trim()).toUpperCase();
-    const firstName = removeVietnameseDiacritics(passenger.Tên.trim()).toUpperCase().replace(/\s+/g, ' ');
-    const gender = passenger.type === 'trẻ_em' 
-      ? (passenger.Giới_tính === 'nam' ? 'MSTR' : 'MISS')
-      : (passenger.Giới_tính === 'nam' ? 'MR' : 'MS');
-    const ageType = passenger.type === 'người_lớn' ? 'ADT' : 'CHD';
-    
-    let formattedName: string;
-    
-    // Add DOB for children
-    if (passenger.type === 'trẻ_em' && passenger.Ngày_sinh) {
-      const dobFormatted = formatDOBForAPI(passenger.Ngày_sinh);
-      formattedName = `${lastName}/${firstName},${gender}(${ageType}/${dobFormatted})`;
-    } else {
-      formattedName = `${lastName}/${firstName},${gender}(${ageType})`;
-    }
-    
-    // Add infant if present
-    if (passenger.infant && passenger.infant.Họ && passenger.infant.Tên && passenger.infant.Ngày_sinh) {
-      const infantLastName = removeVietnameseDiacritics(passenger.infant.Họ.trim()).toUpperCase();
-      const infantFirstName = removeVietnameseDiacritics(passenger.infant.Tên.trim()).toUpperCase().replace(/\s+/g, ' ');
-      const infantGender = passenger.infant.Giới_tính === 'nam' ? 'MSTR' : 'MISS';
-      const infantDOB = formatDOBForAPI(passenger.infant.Ngày_sinh);
-      formattedName += `(INF${infantLastName}/${infantFirstName},${infantGender}/${infantDOB})`;
-    }
-    
-    return formattedName;
   };
 
   const handlePassengerChange = (index: number, field: 'Họ' | 'Tên' | 'Giới_tính' | 'type', value: string | 'nam' | 'nữ' | 'người_lớn' | 'trẻ_em') => {
@@ -261,7 +216,8 @@ export const VNABookingModal = ({
         }
       }
 
-      if (multiCityItinerary) {
+      if (!bookingItinerary) throw new Error('Thiếu dữ liệu hành trình. Vui lòng tìm kiếm lại.');
+      {
         const grouped: VnaV3Passengers = { adults: [], children: [], infants: [] };
         const toPassenger = (p: InfantInfo): VnaV3Passenger => ({
           first_name: removeVietnameseDiacritics(p.Họ.trim()).toUpperCase().replace(/\s+/g, ' '),
@@ -278,14 +234,14 @@ export const VNABookingModal = ({
         if (passengers.length > maxSeats) throw new Error(`Số lượng khách không được vượt quá ${maxSeats} ghế còn lại`);
         bookingInFlight.current = true;
         setIsLoading(true);
-        const booked = await bookVnaMultiCity(multiCityItinerary, grouped, doiTuong, { email: emailKakao, phone: phoneKakao });
+        const booked = await bookVnaV3(bookingItinerary, grouped, doiTuong, { email: emailKakao, phone: phoneKakao });
         setSuccessData(booked);
         try {
           await saveHeldTicket({
             pnr: booked.pnr,
             airline: 'VNA',
             namelist: passengers.map((p) => `${p.Họ} ${p.Tên}`.trim().toUpperCase()),
-            segments: extractMultiCityLegs(multiCityItinerary).map((leg) => {
+            segments: getVnaBookingSegments(bookingItinerary).map((leg) => {
               const [day, month, year] = String(leg.ngày_cất_cánh).split('/');
               return {
                 departure_airport: leg.nơi_đi,
@@ -300,103 +256,6 @@ export const VNABookingModal = ({
         return;
       }
 
-      // Build URL with query params (legacy OW/RT unchanged)
-      const params = new URLSearchParams();
-      params.append('dep', flightInfo.dep);
-      params.append('arr', flightInfo.arr);
-      params.append('depdate', formatDateForAPI(flightInfo.depdate));
-      params.append('deptime', flightInfo.deptime.replace(':', ''));
-      
-      // Only add return date/time if round trip
-      if (flightInfo.tripType === 'RT' && flightInfo.arrdate && flightInfo.arrtime) {
-        params.append('arrdate', formatDateForAPI(flightInfo.arrdate));
-        params.append('arrtime', flightInfo.arrtime.replace(':', ''));
-      }
-      
-      params.append('doituong', doiTuong);
-
-      // Add phonekakao - auto prepend 0 if missing
-      if (phoneKakao.trim()) {
-        let phone = phoneKakao.trim();
-        if (phone.length > 0 && !phone.startsWith('0')) {
-          phone = '0' + phone;
-        }
-        params.append('phonekakao', phone);
-      }
-
-      // Add emailkakao if provided
-      if (emailKakao.trim()) {
-        params.append('emailkakao', emailKakao.trim());
-      }
-
-      // Add passengers in reverse order (last to first)
-      for (let i = passengers.length - 1; i >= 0; i--) {
-        const formattedName = formatNameForAPI(passengers[i]);
-        params.append('hanhkhach', formattedName);
-      }
-
-      setIsLoading(true);
-      bookingInFlight.current = true;
-      const response = await fetch(`https://apilive.hanvietair.com/giuveVNAlive?${params.toString()}`, {
-        method: 'POST',
-        headers: { 'accept': 'application/json' }
-      });
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-
-      if (data.status === 'OK' && data.pnr) {
-        setSuccessData({ pnr: data.pnr });
-        try {
-          const namelist = passengers.map((p) => `${p.Họ} ${p.Tên}`.trim().toUpperCase());
-          const toIso = (s: string) => {
-            if (!s) return '';
-            const m = s.split('/');
-            if (m.length === 3) return `${m[2]}-${m[1].padStart(2, '0')}-${m[0].padStart(2, '0')}`;
-            return s;
-          };
-          const segs: HoldTicketSegmentInput[] = [
-            {
-              departure_airport: flightInfo.dep,
-              arrival_airport: flightInfo.arr,
-              departure_date: toIso(flightInfo.depdate),
-              departure_time: flightInfo.deptime,
-              trip: `${flightInfo.dep}-${flightInfo.arr}`,
-            },
-          ];
-          if (flightInfo.tripType === 'RT' && flightInfo.arrdate) {
-            segs.push({
-              departure_airport: flightInfo.arr,
-              arrival_airport: flightInfo.dep,
-              departure_date: toIso(flightInfo.arrdate),
-              departure_time: flightInfo.arrtime || '',
-              trip: `${flightInfo.arr}-${flightInfo.dep}`,
-            });
-          }
-          await saveHeldTicket({
-            pnr: data.pnr,
-            airline: 'VNA',
-            namelist,
-            segments: segs,
-          });
-        } catch (e) {
-          console.error('[saveHeldTicket VNA]', e);
-        }
-
-        // Auto close after 1.5s and trigger callback
-        setTimeout(() => {
-          setSuccessData(null);
-          onClose();
-          onBookingSuccess?.(data.pnr);
-        }, 1500);
-      } else {
-        toast({
-          title: "Lỗi giữ vé",
-          description: data.message || "Không thể giữ vé. Vui lòng thử lại.",
-          variant: "destructive",
-          duration: 10000
-        });
-      }
     } catch (error: any) {
       console.error('Error booking VNA:', error);
       toast({
@@ -432,9 +291,9 @@ export const VNABookingModal = ({
           </DialogHeader>
 
           <div className="space-y-6">
-            {multiCityItinerary && (
+            {bookingItinerary && (
               <div className="space-y-1 text-sm text-muted-foreground">
-                {extractMultiCityLegs(multiCityItinerary).map((leg, i) => (
+                {getVnaBookingSegments(bookingItinerary).map((leg, i) => (
                   <div key={i}>Chặng {i + 1}: {leg.nơi_đi} → {leg.nơi_đến} · {leg.giờ_cất_cánh} · {leg.ngày_cất_cánh} · {leg.số_hiệu_máy_bay} · Hạng {leg.loại_vé}</div>
                 ))}
               </div>
@@ -674,7 +533,7 @@ export const VNABookingModal = ({
       <Dialog open={!!successData} onOpenChange={() => {
         const pnr = successData?.pnr;
         setSuccessData(null);
-        if (multiCityItinerary && pnr) { onClose(); onBookingSuccess?.(pnr); }
+        if (pnr) { onClose(); onBookingSuccess?.(pnr); }
       }}>
         <DialogContent className="max-w-sm text-center">
           <DialogHeader>
@@ -705,7 +564,7 @@ export const VNABookingModal = ({
                 const pnr = successData?.pnr;
                 setSuccessData(null);
                 onClose();
-                if (multiCityItinerary && pnr) onBookingSuccess?.(pnr);
+                if (pnr) onBookingSuccess?.(pnr);
               }}
             >
               OK
