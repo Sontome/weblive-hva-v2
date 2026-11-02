@@ -19,6 +19,7 @@ import type { HoldTicketSegmentInput } from '@/types/heldTicket';
 import { useTicketRulesDataset } from '@/hooks/useTicketRules';
 import { applyTicketRules, formatNotesLine } from '@/services/ticketRuleEngine';
 import type { RuleSegmentInput } from '@/types/ticketRules';
+import { connectionWait, type VnaSegment, type VnaItineraryV5 } from '@/lib/vnaItinerary';
 
 const toIsoDate = (s?: string): string => {
   if (!s) return '';
@@ -89,6 +90,7 @@ interface FlightLeg {
 }
 
 interface VNAFlightLeg {
+  segments?: VnaSegment[];
   hãng: string;
   id: string;
   nơi_đi: string;
@@ -115,6 +117,7 @@ interface FlightInfo {
 }
 
 interface FlightResult {
+  vnaItinerary?: VnaItineraryV5;
   'chiều đi'?: FlightLeg;
   'chiều về'?: FlightLeg;
   'chiều_đi'?: VNAFlightLeg;
@@ -302,6 +305,21 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   const { data: rulesDataset } = useTicketRulesDataset();
 
   const buildRuleSegments = (result: FlightResult): RuleSegmentInput[] => {
+    if (result.vnaItinerary) {
+      return [result.vnaItinerary.chiều_đi, result.vnaItinerary.chiều_về ?? []].flatMap((segments, legIndex) =>
+        segments.map((segment, index) => ({
+          airline: segment.hãng,
+          from: segment.nơi_đi,
+          to: segment.nơi_đến,
+          departure_time: segment.giờ_cất_cánh,
+          arrival_time: segment.giờ_hạ_cánh,
+          departure_date: segment.ngày_cất_cánh,
+          segment_order: index + 1,
+          leg_index: legIndex,
+          leg_size: segments.length,
+        })),
+      );
+    }
     const segs: RuleSegmentInput[] = [];
     const out = (result as any)['chiều đi'] ?? (result as any)['chiều_đi'];
     const ret = (result as any)['chiều về'] ?? (result as any)['chiều_về'];
@@ -582,13 +600,14 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     
     if (!outbound) return false;
     
-    const hasConnectingOutbound = outbound.số_điểm_dừng === '1';
-    const hasConnectingInbound = inbound && inbound.số_điểm_dừng === '1';
+    const hasConnectingOutbound = Number(outbound.số_điểm_dừng) > 0;
+    const hasConnectingInbound = inbound && Number(inbound.số_điểm_dừng) > 0;
     
     return hasConnectingOutbound || hasConnectingInbound;
   };
 
   const renderFlightPath = (leg: FlightLeg | VNAFlightLeg) => {
+    if ('segments' in leg && leg.segments?.length) return [leg.segments[0].nơi_đi, ...leg.segments.map((segment) => segment.nơi_đến)].join(' → ');
     if (leg.số_điểm_dừng === '0') {
       return `${leg.nơi_đi} → ${leg.nơi_đến}`;
     } else if (leg.số_điểm_dừng === '1') {
@@ -598,6 +617,20 @@ const FlightResults: React.FC<FlightResultsProps> = ({
   };
 
   const renderDetailedFlightSegments = (leg: FlightLeg | VNAFlightLeg) => {
+    if ('segments' in leg && leg.segments?.length) {
+      const segments = leg.segments;
+      return <div className="text-sm text-muted-foreground space-y-1">
+        {segments.map((segment, i) => {
+          const next = segments[i + 1];
+          const wait = next ? connectionWait(segment, next) : '';
+          return <div key={i}>
+            <div>Chặng {i + 1}: {segment.nơi_đi} → {segment.nơi_đến} · {segment.số_hiệu_máy_bay} · Hạng {segment.loại_vé}</div>
+            <div>{segment.giờ_cất_cánh} ngày {segment.ngày_cất_cánh} → {segment.giờ_hạ_cánh} ngày {segment.ngày_hạ_cánh}</div>
+            <div>Thời gian bay: {formatFlightTime(segment.thời_gian_bay)}{wait && <span className="text-destructive"> · Chờ nối chuyến: {wait}</span>}</div>
+          </div>;
+        })}
+      </div>;
+    }
     if (leg.số_điểm_dừng === '0') {
       return (
         <div className="text-sm text-blue-700">
@@ -651,7 +684,11 @@ const FlightResults: React.FC<FlightResultsProps> = ({
       'WE': { name: 'Parata Air', carryOn: '10kg', checked: '30kg' },
     };
     // For connecting flights, show all segments with proper times
-    if (outbound.số_điểm_dừng === '1') {
+    if (result.vnaItinerary) {
+      for (const segment of [...result.vnaItinerary.chiều_đi, ...(result.vnaItinerary.chiều_về ?? [])]) {
+        lines.push(`${formatDate(segment.ngày_cất_cánh)} ${segment.giờ_cất_cánh}(${segment.nơi_đi}) → ${formatDate(segment.ngày_hạ_cánh)} ${segment.giờ_hạ_cánh}(${segment.nơi_đến})`);
+      }
+    } else if (outbound.số_điểm_dừng === '1') {
       lines.push(`${outbound.nơi_đi}-${outbound.điểm_dừng_1} ${outbound.giờ_cất_cánh} ngày ${formatDate(outbound.ngày_cất_cánh)}`);
       lines.push(`${outbound.điểm_dừng_1}-${outbound.nơi_đến} ${outbound.giờ_hạ_cánh} ngày ${formatDate(outbound.ngày_hạ_cánh)}`);
       
@@ -726,7 +763,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
 
   const handleVNABooking = (result: FlightResult) => {
     console.log('Selected VNA flight for booking:', result);
-    setSelectedFlight(result);
+    setSelectedFlight(structuredClone(result));
     setVnaBookingModalOpen(true);
   };
 
@@ -772,7 +809,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
     const premiaNote = outbound.hãng === 'YP' && premiaStatus === 'adjacent' ? 'Vé hãng Premia tham khảo' : '';
     
     // Only show copy template for direct flights - HIDE for connecting flights
-    const shouldShowCopyTemplate = isDirect && !isConnecting;
+    const shouldShowCopyTemplate = (isDirect && !isConnecting) || !!result.vnaItinerary;
 
     const ruleEffects = computeRuleEffects(result);
     if (ruleEffects?.hidden) return null;
@@ -902,6 +939,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
             </div>
             {expandedDetails[index] && (
               <div className="text-xs text-gray-600 space-y-0.5 mt-1 p-1.5 bg-gray-50 rounded">
+                {result.vnaItinerary && <div className="space-y-2"><div>Chiều đi:{renderDetailedFlightSegments(outbound)}</div>{inbound && <div>Chiều về:{renderDetailedFlightSegments(inbound)}</div>}</div>}
                 <div>Giá gốc: {formatPriceForDisplay(parseInt(result['thông_tin_chung'].giá_vé_gốc))} KRW</div>
                 <div>Phí nhiên liệu: {formatPriceForDisplay(parseInt(result['thông_tin_chung'].phí_nhiên_liệu))} KRW</div>
                 {searchData && (
@@ -1451,6 +1489,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
             />
             
             <VNABookingModal
+              selectedItinerary={selectedFlight.vnaItinerary}
               isOpen={vnaBookingModalOpen}
               onClose={() => {
                 setVnaBookingModalOpen(false);
@@ -1643,6 +1682,7 @@ const FlightResults: React.FC<FlightResultsProps> = ({
           />
           
           <VNABookingModal
+            selectedItinerary={selectedFlight.vnaItinerary}
             isOpen={vnaBookingModalOpen}
             onClose={() => {
               setVnaBookingModalOpen(false);
