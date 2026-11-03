@@ -4,18 +4,21 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronDown as ChevronDownIcon,
+  Copy,
   RotateCcw,
   RotateCw,
   Settings,
   Plus,
   Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { format, addMonths, startOfMonth, isSameMonth } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { buildRouteCode } from "@/lib/routeCode";
 import { PriceConfig } from "@/hooks/usePriceConfigs";
 import { useRouteDiscounts } from "@/hooks/useRouteDiscounts";
 import { airports } from "@/data/airports";
@@ -653,6 +656,25 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
   useEffect(() => {
     setPtcCode(isFromKorea ? "VFR" : "ADT");
   }, [isFromKorea]);
+
+  // Copy route code: ANVN20NOVICNVII (OW) / ANVN20NOVICNVII*ANVN23NOVVIIICN (RT)
+  const routeCode = buildRouteCode({
+    tripType: isMultiCity ? "MD" : formData.tripType,
+    departure: formData.departure,
+    arrival: formData.arrival,
+    departureDate: formData.departureDate,
+    returnDate: formData.returnDate,
+  });
+
+  const copyRouteCode = async () => {
+    if (!routeCode) return;
+    try {
+      await navigator.clipboard.writeText(routeCode);
+      toast.success(`Đã copy mã tuyến: ${routeCode}`);
+    } catch {
+      toast.error("Không thể copy, vui lòng thử lại");
+    }
+  };
 
   const submitSearch = (type = ptcCode, forceFresh = false) => {
     onSearch({ ...formData, ptcCode: isFromKorea ? type : "ADT" }, { forceFresh });
@@ -1829,6 +1851,18 @@ const FlightSearchForm = React.forwardRef<FlightSearchFormHandle, FlightSearchFo
 
             {/* Search Button */}
             <div className="pt-2 flex items-end gap-2">
+              <div className="shrink-0">
+                <label className="block text-xs font-medium text-transparent mb-1 select-none">Copy</label>
+                <button
+                  type="button"
+                  onClick={copyRouteCode}
+                  disabled={!routeCode}
+                  title="Copy mã tuyến tìm kiếm"
+                  className="h-9 w-9 flex items-center justify-center rounded-md border border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              </div>
               <div className="shrink-0">
                 <label htmlFor="vna-search-type" className="block text-xs font-medium text-muted-foreground mb-1">Type</label>
                 <select
