@@ -132,6 +132,7 @@ const Index = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showPNRModal, setShowPNRModal] = useState(false);
+  const [imageTicketInitialPNRs, setImageTicketInitialPNRs] = useState<string | undefined>(undefined);
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [showRepriceModal, setShowRepriceModal] = useState(false);
   const [showUpdatePnrModal, setShowUpdatePnrModal] = useState(false);
@@ -623,10 +624,18 @@ const Index = () => {
       <EmailTicketModal
         isOpen={showEmailModal}
         onClose={() => setShowEmailModal(false)}
+        onEmailSuccess={(pnrs) => {
+          setImageTicketInitialPNRs(pnrs);
+          setShowPNRModal(true);
+        }}
       />
       <PNRCheckModal
         isOpen={showPNRModal}
-        onClose={() => setShowPNRModal(false)}
+        onClose={() => {
+          setShowPNRModal(false);
+          setImageTicketInitialPNRs(undefined);
+        }}
+        initialPNRs={imageTicketInitialPNRs}
       />
       <CheckinModal
         isOpen={showCheckinModal}
