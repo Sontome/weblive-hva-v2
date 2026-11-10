@@ -13,10 +13,12 @@ import {
 import { PNRCheckModule } from "@/components/PNRCheckModule";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { getEmailTicketImagePnrs } from '@/lib/emailTicketImagePnrs';
 
 interface EmailTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onEmailSuccess?: (pnrs: string) => void;
 }
 
 const TYPE_LABEL: Record<number, string> = {
@@ -26,7 +28,7 @@ const TYPE_LABEL: Record<number, string> = {
   0: "Ghi chú",
 };
 
-export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => {
+export const EmailTicketModal = ({ isOpen, onClose, onEmailSuccess }: EmailTicketModalProps) => {
   const [formData, setFormData] = useState({
     email: "",
     tenKhach: "",
@@ -217,6 +219,8 @@ export const EmailTicketModal = ({ isOpen, onClose }: EmailTicketModalProps) => 
       } else if (isSuccess) {
         toast.success("Đã thêm hàng chờ gửi mail thành công");
         handleClose();
+        const imagePnrs = getEmailTicketImagePnrs(pnrs);
+        if (imagePnrs) onEmailSuccess?.(imagePnrs);
       } else {
         toast.error("Gửi mail thất bại");
       }
