@@ -235,7 +235,14 @@ export const VNABookingModal = ({
         bookingInFlight.current = true;
         setIsLoading(true);
         const booked = await bookVnaV3(bookingItinerary, grouped, doiTuong, { email: emailKakao, phone: phoneKakao });
-        setSuccessData(booked);
+        if (onBookingSuccess) {
+          toast({ title: 'Giữ vé VNA thành công', description: `PNR: ${booked.pnr}${booked.deadline ? ` — Hạn thanh toán: ${booked.deadline}` : ''}` });
+          setSuccessData(null);
+          onClose();
+          onBookingSuccess(booked.pnr);
+        } else {
+          setSuccessData(booked);
+        }
         try {
           await saveHeldTicket({
             pnr: booked.pnr,
@@ -531,9 +538,8 @@ export const VNABookingModal = ({
 
       {/* Success popup */}
       <Dialog open={!!successData} onOpenChange={() => {
-        const pnr = successData?.pnr;
         setSuccessData(null);
-        if (pnr) { onClose(); onBookingSuccess?.(pnr); }
+        onClose();
       }}>
         <DialogContent className="max-w-sm text-center">
           <DialogHeader>
@@ -561,10 +567,8 @@ export const VNABookingModal = ({
           <div className="flex justify-center mt-4">
             <Button
               onClick={() => {
-                const pnr = successData?.pnr;
                 setSuccessData(null);
                 onClose();
-                if (pnr) onBookingSuccess?.(pnr);
               }}
             >
               OK
