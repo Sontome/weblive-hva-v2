@@ -15,6 +15,7 @@ import { PNRCheckModule } from "@/components/PNRCheckModule";
 interface PNRCheckModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialPNRs?: string;
 }
 
 interface PNRFile {
@@ -26,10 +27,18 @@ interface PNRFile {
 export const PNRCheckModal = ({
   isOpen,
   onClose,
+  initialPNRs,
 }: PNRCheckModalProps) => {
   const [pnrCode, setPnrCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState<PNRFile[]>([]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setPnrCode(initialPNRs ?? '');
+      setFiles([]);
+    }
+  }, [isOpen, initialPNRs]);
 
   const handleClose = () => {
     setPnrCode('');
