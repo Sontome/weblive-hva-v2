@@ -56,7 +56,7 @@ export const searchPremiaFlights = async (searchData: FlightSearchData): Promise
 /** Nhãn hành lý Premia theo mã hạng vé trả về ở `hành_lý_vna` */
 export const getPremiaBaggageLabel = (code?: string): string => {
   const c = (code || '').trim().toUpperCase();
-  if (c === 'YL') return 'Premia 10kg xách tay, 30kg ký gửi';
+  if (c === 'YL') return 'Premia 10kg xách tay, 38kg ký gửi';
   if (c === 'YS') return 'Premia 10kg xách tay, 46kg ký gửi';
   return 'Premia 23kg+23kg ký gửi';
 };
